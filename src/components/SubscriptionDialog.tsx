@@ -38,6 +38,7 @@ export default function SubscriptionDialog(props: SubscriptionDialogProps) {
           enableReinitialize
           validationSchema={subscriptionSchema}
           validateOnChange={false}
+          validateOnBlur={false}
           onSubmit={onClose}
         >
           <Form autoComplete="off" autoSave="off">

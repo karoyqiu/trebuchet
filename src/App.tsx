@@ -1,7 +1,11 @@
 import {
   FluentProvider,
+  Tab,
+  TabList,
+  TabValue,
   Toolbar,
   ToolbarButton,
+  ToolbarGroup,
   makeStyles,
   webDarkTheme,
   webLightTheme,
@@ -17,6 +21,9 @@ const useStyles = makeStyles({
   root: {
     flexGrow: 1,
   },
+  toolbar: {
+    justifyContent: 'space-between',
+  },
 });
 
 const emptySub: Subscription = {
@@ -25,6 +32,7 @@ const emptySub: Subscription = {
 };
 
 function App() {
+  const [tab, setTab] = React.useState<TabValue>('subs');
   const [open, setOpen] = React.useState(false);
   const { isDarkMode } = useDarkMode();
   const classes = useStyles();
@@ -38,10 +46,18 @@ function App() {
 
   return (
     <FluentProvider className={classes.root} theme={theme}>
-      <Toolbar>
-        <ToolbarButton icon={<AddFilled />} onClick={() => setOpen(true)}>
-          Subscribe
-        </ToolbarButton>
+      <Toolbar className={classes.toolbar}>
+        <ToolbarGroup>
+          <TabList selectedValue={tab} onTabSelect={(_event, data) => setTab(data.value)}>
+            <Tab value="ep">Endpoints</Tab>
+            <Tab value="subs">Subscriptions</Tab>
+          </TabList>
+        </ToolbarGroup>
+        <ToolbarGroup>
+          <ToolbarButton icon={<AddFilled />} onClick={() => setOpen(true)}>
+            Subscribe
+          </ToolbarButton>
+        </ToolbarGroup>
       </Toolbar>
       <SubscriptionDialog open={open} onClose={() => setOpen(false)} sub={emptySub} />
     </FluentProvider>

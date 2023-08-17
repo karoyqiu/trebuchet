@@ -12,6 +12,9 @@
   },
   "tauri": {
     "allowlist": {
+      "window": {
+        "show": true
+      }
     },
     "bundle": {
       "active": false,
@@ -32,9 +35,8 @@
       {
         "center": true,
         "fileDropEnabled": false,
-        "fullscreen": false,
-        "resizable": true,
         "title": "Trebuchet",
+        "visible": false,
         "width": 1200,
         "height": 720
       }

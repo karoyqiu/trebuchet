@@ -16,7 +16,7 @@ import TextField from './TextField';
 
 type SubscriptionDialogProps = {
   open: boolean;
-  onClose: (values?: Subscription) => void;
+  onClose: (values?: Subscription) => Promise<void> | void;
   sub: Subscription;
 };
 
@@ -28,7 +28,7 @@ export default function SubscriptionDialog(props: SubscriptionDialogProps) {
       open={open}
       onOpenChange={(_event, data) => {
         if (!data.open) {
-          onClose();
+          void onClose();
         }
       }}
     >

@@ -15,10 +15,14 @@ import { appWindow } from '@tauri-apps/api/window';
 import React from 'react';
 import { useDarkMode } from 'usehooks-ts';
 import SubscriptionDialog from './components/SubscriptionDialog';
+import SubscriptionTable from './components/SubscriptionTable';
+import db from './db';
 import { Subscription } from './db/subscription';
 
 const useStyles = makeStyles({
   root: {
+    display: 'flex',
+    flexDirection: 'column',
     flexGrow: 1,
   },
   toolbar: {
@@ -37,7 +41,22 @@ function App() {
   const { isDarkMode } = useDarkMode();
   const classes = useStyles();
 
-  const theme = React.useMemo(() => (isDarkMode ? webDarkTheme : webLightTheme), [isDarkMode]);
+  const theme = React.useMemo(() => {
+    const thm = isDarkMode ? webDarkTheme : webLightTheme;
+
+    // 设置整个文档的背景色
+    document.body.style.backgroundColor = thm.colorNeutralBackground1;
+
+    return thm;
+  }, [isDarkMode]);
+
+  const sub = React.useCallback(async (values?: Subscription) => {
+    setOpen(false);
+
+    if (values) {
+      await db.subs.add(values);
+    }
+  }, []);
 
   // 加载完成之后再显示窗口
   React.useEffect(() => {
@@ -59,7 +78,8 @@ function App() {
           </ToolbarButton>
         </ToolbarGroup>
       </Toolbar>
-      <SubscriptionDialog open={open} onClose={() => setOpen(false)} sub={emptySub} />
+      {tab === 'subs' && <SubscriptionTable />}
+      <SubscriptionDialog open={open} onClose={sub} sub={emptySub} />
     </FluentProvider>
   );
 }

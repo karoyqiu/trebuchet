@@ -52,11 +52,17 @@ export default function SubscriptionTable(props: SubscriptionTableProps) {
       createTableColumn({
         columnId: 'actions',
         renderHeaderCell: () => 'Actions',
-        renderCell: () => (
+        renderCell: (item) => (
           <Button
             className={classes.errorButton}
             icon={<DeleteFilled className={classes.errorButton} />}
             appearance="subtle"
+            onClick={async () => {
+              await Promise.allSettled([
+                db.endpoints.where('subId').equals(item.id!).delete(),
+                db.subs.delete(item.id!),
+              ]);
+            }}
           />
         ),
       }),

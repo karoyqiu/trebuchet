@@ -13,8 +13,10 @@ export interface Endpoint {
   cipher?: string;
   /** 传输协议 */
   transport?: string;
+  /** 订阅分组 ID */
+  subId: number;
   /** 订阅分组名称 */
-  sub: string;
+  subName: string;
   /** 延迟，毫秒 */
   latency?: number;
   /** 速度，字节/秒 */

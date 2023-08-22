@@ -14,6 +14,7 @@ import { AddFilled } from '@fluentui/react-icons';
 import { appWindow } from '@tauri-apps/api/window';
 import React from 'react';
 import { useDarkMode } from 'usehooks-ts';
+import useSubscribe from './api/useSubscribe';
 import SubscriptionDialog from './components/SubscriptionDialog';
 import SubscriptionTable from './components/SubscriptionTable';
 import db from './db';
@@ -40,6 +41,8 @@ function App() {
   const [open, setOpen] = React.useState(false);
   const { isDarkMode } = useDarkMode();
   const classes = useStyles();
+
+  useSubscribe();
 
   const theme = React.useMemo(() => {
     const thm = isDarkMode ? webDarkTheme : webLightTheme;

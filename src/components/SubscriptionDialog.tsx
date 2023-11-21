@@ -1,67 +1,47 @@
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  DialogTrigger,
-} from '@fluentui/react-components';
-import { AddFilled } from '@fluentui/react-icons';
 import { Form, Formik } from 'formik';
+import React from 'react';
 import { Subscription, subscriptionSchema } from '../db/subscription';
-import Stack from './Stack';
 import TextField from './TextField';
 
 type SubscriptionDialogProps = {
-  open: boolean;
   onClose: (values?: Subscription) => Promise<void> | void;
   sub: Subscription;
 };
 
-export default function SubscriptionDialog(props: SubscriptionDialogProps) {
-  const { open, onClose, sub } = props;
+const SubscriptionDialog = React.forwardRef<HTMLDialogElement, SubscriptionDialogProps>(
+  function SubscriptionDialog(props, ref) {
+    const { onClose, sub } = props;
 
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(_event, data) => {
-        if (!data.open) {
-          void onClose();
-        }
-      }}
-    >
-      <DialogSurface>
-        <Formik
-          initialValues={sub}
-          enableReinitialize
-          validationSchema={subscriptionSchema}
-          validateOnChange={false}
-          validateOnBlur={false}
-          onSubmit={onClose}
-        >
-          <Form autoComplete="off" autoSave="off">
-            <DialogBody>
-              <DialogTitle>Subscribe</DialogTitle>
-              <DialogContent>
-                <Stack>
-                  <TextField name="name" label="Name" required />
-                  <TextField name="url" label="URL" required />
-                </Stack>
-              </DialogContent>
-              <DialogActions>
-                <DialogTrigger>
-                  <Button>Cancel</Button>
-                </DialogTrigger>
-                <Button type="submit" appearance="primary" icon={<AddFilled />}>
+    return (
+      <dialog className="modal" ref={ref}>
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Subscription</h3>
+          <Formik
+            initialValues={sub}
+            enableReinitialize
+            validationSchema={subscriptionSchema}
+            validateOnChange={false}
+            validateOnBlur={false}
+            onReset={() => onClose()}
+            onSubmit={onClose}
+          >
+            <Form autoComplete="off" autoSave="off" className="flex flex-col" method="dialog">
+              <TextField name="name" label="Name" required />
+              <TextField name="url" label="URL" required />
+              <div className="modal-action">
+                <button className="btn" type="reset">
+                  Cancel
+                </button>
+                <button className="btn btn-primary" type="submit">
                   Add
-                </Button>
-              </DialogActions>
-            </DialogBody>
-          </Form>
-        </Formik>
-      </DialogSurface>
-    </Dialog>
-  );
-}
+                </button>
+              </div>
+            </Form>
+          </Formik>
+        </div>
+      </dialog>
+    );
+  }
+);
+
+export default SubscriptionDialog;

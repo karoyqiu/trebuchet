@@ -7,8 +7,7 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "trebuchet",
-    "version": "../package.json"
+    "productName": "trebuchet"
   },
   "tauri": {
     "allowlist": {

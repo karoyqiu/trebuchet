@@ -2,7 +2,7 @@
 name = "trebuchet"
 version = "0.0.0"
 description = "Project Trebuchet"
-authors = ["you"]
+authors = ["karoyqiu@gmail.com"]
 license = ""
 repository = ""
 edition = "2021"

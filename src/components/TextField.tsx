@@ -1,4 +1,4 @@
-import { Field, Input } from '@fluentui/react-components';
+import clsx from 'clsx';
 import { FieldAttributes, FieldProps, Field as FormikField } from 'formik';
 
 type TextFieldProps = FieldAttributes<unknown> & {
@@ -11,9 +11,23 @@ export default function TextField(props: TextFieldProps) {
   return (
     <FormikField {...rest}>
       {({ field, meta }: FieldProps) => (
-        <Field label={label} required={rest.required} validationMessage={meta.error}>
-          <Input required={rest.required} {...field} />
-        </Field>
+        <div className="form-control w-full">
+          {label && (
+            <label className="label">
+              <span className="label-text">{label}</span>
+            </label>
+          )}
+          <input
+            type="text"
+            className={clsx('input input-bordered w-full', meta.error && 'input-error')}
+            {...field}
+          />
+          {meta.error && (
+            <label className="label">
+              <span className="label-text-alt text-error">{meta.error}</span>
+            </label>
+          )}
+        </div>
       )}
     </FormikField>
   );

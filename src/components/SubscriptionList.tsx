@@ -4,6 +4,8 @@ import db from '../db';
 import { Subscription } from '../db/subscription';
 import SubscriptionDialog from './SubscriptionDialog';
 
+const enableSub = (id: number, enabled: boolean) => db.subs.update(id, { disabled: !enabled });
+
 export default function SubscriptionList() {
   const [sub, setSub] = React.useState<Subscription>({ name: '', url: '' });
   const ref = React.useRef<HTMLDialogElement>(null);
@@ -16,11 +18,24 @@ export default function SubscriptionList() {
           {items.map((item) => (
             <tr key={item.id} className="hover">
               <td>
+                <label>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary"
+                    checked={!item.disabled}
+                    onChange={(event) => enableSub(item.id!, event.target.checked)}
+                  />
+                </label>
+              </td>
+              <td>
                 <p className="text-lg font-bold">{item.name}</p>
                 <p className="text-sm opacity-50">{item.url}</p>
               </td>
               <td className="w-0">
                 <div className="join">
+                  <button className="btn join-item">
+                    <span className="material-symbols-outlined">refresh</span>
+                  </button>
                   <button
                     className="btn join-item"
                     onClick={() => {

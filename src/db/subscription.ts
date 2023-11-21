@@ -7,6 +7,8 @@ export interface Subscription {
   name: string;
   /** 地址 */
   url: string;
+  /** 是否启用 */
+  disabled?: boolean;
 }
 
 export const subscriptionSchema = object({

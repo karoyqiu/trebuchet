@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import React from 'react';
+import { updateSubscription } from '../api/useSubscribe';
 import db from '../db';
 import { Subscription } from '../db/subscription';
 import SubscriptionDialog from './SubscriptionDialog';
@@ -27,13 +28,13 @@ export default function SubscriptionList() {
                   />
                 </label>
               </td>
-              <td>
+              <td className="w-full">
                 <p className="text-lg font-bold">{item.name}</p>
                 <p className="text-sm opacity-50">{item.url}</p>
               </td>
-              <td className="w-0">
+              <td>
                 <div className="join">
-                  <button className="btn join-item">
+                  <button className="btn join-item" onClick={() => updateSubscription(item)}>
                     <span className="material-symbols-outlined">refresh</span>
                   </button>
                   <button

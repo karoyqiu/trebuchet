@@ -33,7 +33,7 @@ const SubscriptionDialog = React.forwardRef<HTMLDialogElement, SubscriptionDialo
                   Cancel
                 </button>
                 <button className="btn btn-primary" type="submit">
-                  Add
+                  {sub.id ? 'Save' : 'Add'}
                 </button>
               </div>
             </Form>

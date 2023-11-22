@@ -11,7 +11,7 @@ class Database extends Dexie {
 
     this.version(1).stores({
       subs: '++id, &name, &url',
-      endpoints: '[host+port], &id, disabled',
+      endpoints: '[host+port], subId',
     });
   }
 }

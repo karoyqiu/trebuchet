@@ -26,7 +26,6 @@ export const parse = (url: URL): Endpoint => {
   const qrcode = JSON.parse(json) as VMessQRCode;
 
   return {
-    id: qrcode.id,
     protocol: 'vmess',
     name: qrcode.ps,
     host: qrcode.add,

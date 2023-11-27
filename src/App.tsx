@@ -1,9 +1,11 @@
 import { appWindow } from '@tauri-apps/api/window';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
+import { Outlet } from 'react-router-dom';
 import useSubscribe from './api/useSubscribe';
 import Alert from './components/Alert';
 import ConnectionState from './components/ConnectionState';
+import LinkMenuItem from './components/LinkMenuItem';
 import Speedometer from './components/Speedometer';
 import db from './db';
 import { Subscription } from './db/subscription';
@@ -34,20 +36,29 @@ function App() {
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         Components={{ default: Alert, success: Alert, error: Alert, warning: Alert, info: Alert }}
       />
-      <div className="flex flex-col w-48 bg-neutral">
+      <div className="flex flex-col w-48 bg-base-300">
         <div className="p-6">
           <Speedometer download={0} upload={0} />
         </div>
         <div className="divider my-0" />
-        <nav className="join join-vertical flex-1">
-          <button className="btn btn-ghost join-item">General</button>
+        <nav className="flex-1">
+          <ul className="menu text-base">
+            <li>
+              <LinkMenuItem to="/">General</LinkMenuItem>
+            </li>
+            <li>
+              <LinkMenuItem to="ep">Endpoints</LinkMenuItem>
+            </li>
+          </ul>
         </nav>
         <div className="divider my-0" />
         <div className="p-4">
           <ConnectionState connected={false} seconds={12345} />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto"></div>
+      <div className="flex-1 overflow-y-auto">
+        <Outlet />
+      </div>
     </div>
     // <div role="tablist" className="tabs tabs-lifted grid-rows-[min-content_1fr] h-screen">
     //   <input

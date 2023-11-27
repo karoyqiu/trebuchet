@@ -1,6 +1,8 @@
 import { appWindow } from '@tauri-apps/api/window';
+import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import useSubscribe from './api/useSubscribe';
+import Alert from './components/Alert';
 import ConnectionState from './components/ConnectionState';
 import Speedometer from './components/Speedometer';
 import db from './db';
@@ -28,6 +30,10 @@ function App() {
 
   return (
     <div className="flex flex-1">
+      <SnackbarProvider
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        Components={{ default: Alert, success: Alert, error: Alert, warning: Alert, info: Alert }}
+      />
       <div className="flex flex-col w-48 bg-neutral">
         <div className="p-6">
           <Speedometer download={0} upload={0} />

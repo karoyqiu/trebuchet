@@ -1,6 +1,7 @@
 import { appWindow } from '@tauri-apps/api/window';
 import React from 'react';
 import useSubscribe from './api/useSubscribe';
+import EndpointList from './components/EndpointList';
 import SubscriptionDialog from './components/SubscriptionDialog';
 import SubscriptionList from './components/SubscriptionList';
 import db from './db';
@@ -27,20 +28,29 @@ function App() {
   }, []);
 
   return (
-    <div role="tablist" className="tabs tabs-lifted">
-      <input role="tab" name="main-tab" className="tab" type="radio" aria-label="Endpoints" />
-      <div role="tabpanel" className="tab-content bg-base-100 border-base-300">
-        Tab content 1
-      </div>
+    <div role="tablist" className="tabs tabs-lifted grid-rows-[min-content_1fr] h-screen">
       <input
         role="tab"
         name="main-tab"
         className="tab"
         type="radio"
-        aria-label="Subscriptions"
+        aria-label="Endpoints"
         defaultChecked
       />
-      <div role="tabpanel" className="tab-content bg-base-100 border-base-300">
+      <div
+        role="tabpanel"
+        className="tab-content bg-base-100 border-base-300 h-full overflow-y-auto"
+      >
+        <div className="join">
+          <button className="btn btn-square join-item">Test</button>
+        </div>
+        <EndpointList />
+      </div>
+      <input role="tab" name="main-tab" className="tab" type="radio" aria-label="Subscriptions" />
+      <div
+        role="tabpanel"
+        className="tab-content bg-base-100 border-base-300 h-full overflow-y-auto"
+      >
         <SubscriptionList />
       </div>
       <button className="btn btn-ghost btn-sm" onClick={() => ref.current?.showModal()}>

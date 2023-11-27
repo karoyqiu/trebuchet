@@ -26,13 +26,14 @@ const urlToEndpoint = (s: string) => {
         break;
     }
   } catch (e) {
-    console.error('Failed to parse url', e);
+    console.warn('Failed to parse url', e);
   }
 
   return null;
 };
 
 export const updateSubscription = async (sub: Subscription) => {
+  console.log(`Updating sub ${sub.name}`);
   // 下载订阅
   const body = await invoke<string>('download', { url: sub.url });
   // base64
@@ -41,7 +42,9 @@ export const updateSubscription = async (sub: Subscription) => {
   const lines = text.split('\n');
 
   // 删除原有的
-  await db.endpoints.where('subId').equals(sub.id!).delete();
+  const removed = await db.endpoints.where('subId').equals(sub.id!).delete();
+  console.log(`${removed} endpoints removed`);
+
   const eps: Endpoint[] = [];
 
   for (const line of lines) {
@@ -55,6 +58,7 @@ export const updateSubscription = async (sub: Subscription) => {
 
   if (eps.length > 0) {
     await db.endpoints.bulkPut(eps);
+    console.log(`${eps.length} endpoints added`);
   }
 };
 

@@ -31,7 +31,7 @@ function App() {
   }, []);
 
   return (
-    <div className="flex flex-1">
+    <div className="flex w-full h-full">
       <SnackbarProvider
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         Components={{ default: Alert, success: Alert, error: Alert, warning: Alert, info: Alert }}
@@ -56,7 +56,7 @@ function App() {
           <ConnectionState connected={false} seconds={12345} />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 max-h-full">
         <Outlet />
       </div>
     </div>

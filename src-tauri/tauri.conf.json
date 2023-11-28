@@ -11,6 +11,14 @@
   },
   "tauri": {
     "allowlist": {
+      "fs": {
+        "scope": ["$TEMP/trebuchet"],
+        "all": true
+      },
+      "shell": {
+        "sidecar": true,
+        "scope": [{ "name": "xray/xray", "sidecar": true }]
+      },
       "window": {
         "show": true
       }
@@ -25,10 +33,12 @@
         "icons/128x128@2x.png",
         "icons/icon.icns",
         "icons/icon.ico"
-      ]
+      ],
+      "externalBin": ["xray/xray"],
+      "resources": ["xray/LICENSE", "xray/geoip.dat", "xray/geosite.dat", "xray/README.md"]
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'"
     },
     "windows": [
       {

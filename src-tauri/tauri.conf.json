@@ -11,9 +11,19 @@
   },
   "tauri": {
     "allowlist": {
+      "fs": {
+        "scope": ["$TEMP/trebuchet", "$TEMP/trebuchet/*"],
+        "all": true
+      },
+      "os": {
+        "all": true
+      },
+      "path": {
+        "all": true
+      },
       "shell": {
         "sidecar": true,
-        "scope": [{ "name": "xray/xray", "sidecar": true }]
+        "scope": [{ "name": "xray/xray", "sidecar": true, "args": true }]
       },
       "window": {
         "show": true

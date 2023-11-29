@@ -1,9 +1,15 @@
+import { BaseDirectory, createDir, writeTextFile } from '@tauri-apps/api/fs';
+import { tempdir } from '@tauri-apps/api/os';
+import { join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
+import { nanoid } from 'nanoid';
 import Endpoint from '../../db/endpoint';
 import { settings } from '../settings';
 import ConfigObject from './config';
 import OutboundObject from './config/outbound';
 import { vmessToOutbound } from './protocols/vmess';
+
+const redirectLog = (line: string) => console.log(`--> ${line}`);
 
 const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
   switch (ep.protocol) {
@@ -16,9 +22,7 @@ const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
 
 /** Xray 控制类 */
 class Xray {
-  private cmd: Command;
   private child: Child | null;
-  private config: ConfigObject;
 
   /** API 监听端口。 */
   public apiPort: number;
@@ -28,13 +32,7 @@ class Xray {
    */
   constructor() {
     this.child = null;
-    this.config = { inbounds: [], outbounds: [] };
     this.apiPort = 1099;
-    this.cmd = Command.sidecar('xray/xray', ['-config', 'stdin:'], { encoding: 'utf-8' });
-
-    const redir = this.redirectLog.bind(this);
-    this.cmd.stdout.on('data', redir);
-    this.cmd.stderr.on('data', redir);
   }
 
   /**
@@ -78,7 +76,7 @@ class Xray {
     }
 
     // 写入配置文件
-    this.config = {
+    const config: ConfigObject = {
       api: {
         tag: 'api',
         services: ['StatsService'],
@@ -170,7 +168,7 @@ class Xray {
         },
         {
           tag: 'api',
-          port: 9090,
+          port: this.apiPort,
           listen: '127.0.0.1',
           protocol: 'dokodemo-door',
           settings: {
@@ -181,8 +179,31 @@ class Xray {
       outbounds,
     };
 
+    const subdir = 'trebuchet';
+    const filename = `${nanoid()}.json`;
+    const [temp] = await Promise.all([
+      tempdir(),
+      createDir(subdir, { dir: BaseDirectory.Temp, recursive: true }),
+    ]);
+    const [dir] = await Promise.all([
+      join(temp, subdir),
+      writeTextFile(`${subdir}/${filename}`, JSON.stringify(config, undefined, 2), {
+        dir: BaseDirectory.Temp,
+      }),
+    ]);
+
     // 启动 xray
-    const child = await this.cmd.spawn();
+    const cmd = Command.sidecar('xray/xray', ['-config', filename], {
+      cwd: dir,
+      env: {
+        XRAY_LOCATION_ASSET: dir,
+      },
+      encoding: 'utf-8',
+    });
+    cmd.stdout.on('data', redirectLog);
+    cmd.stderr.on('data', redirectLog);
+
+    const child = await cmd.spawn();
     console.info(`Xray started with PID ${child.pid}`);
 
     this.child = child;
@@ -193,15 +214,6 @@ class Xray {
     if (this.child) {
       await this.child.kill();
       this.child = null;
-    }
-  }
-
-  private async redirectLog(line: string) {
-    console.log(`--> ${line}`);
-
-    if (this.child && line.includes('Reading config')) {
-      console.debug('Writing config', this.config);
-      await this.child.write(JSON.stringify(this.config));
     }
   }
 }

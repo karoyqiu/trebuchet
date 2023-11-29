@@ -2,8 +2,11 @@ import ApiObject from './api';
 import DnsObject from './dns';
 import InboundObject from './inbound';
 import LogObject from './log';
+import OutboundObject from './outbound';
 import PolicyObject from './policy';
 import RoutingObject from './routing';
+import StatsObject from './stats';
+import { TransportObject } from './transports';
 
 /** Xray 的配置文件 */
 export default interface ConfigObject {
@@ -19,4 +22,10 @@ export default interface ConfigObject {
   policy?: PolicyObject;
   /** 一个数组，每个元素是一个入站连接配置。 */
   inbounds: InboundObject[];
+  /** 一个数组，每个元素是一个出站连接配置。 */
+  outbounds: OutboundObject[];
+  /** 用于配置 Xray 其它服务器建立和使用网络连接的方式。 */
+  transport?: TransportObject;
+  /** 用于配置流量数据的统计。 */
+  stats?: StatsObject;
 }

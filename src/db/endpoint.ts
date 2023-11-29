@@ -1,12 +1,9 @@
-/** 支持的协议 */
-export const supportedProtocols = ['vmess', 'vless', 'ss', 'trojan'] as const;
-/** 支持的协议 */
-export type SupportedProtocol = (typeof supportedProtocols)[number];
+import { NetworkType } from '../api/xray/config/transports';
+import { VMessEndpoint } from '../api/xray/protocols/vmess';
 
 /** 节点 */
-export interface Endpoint {
-  /** 类型，vmess, shadowsocks 等等 */
-  protocol: SupportedProtocol;
+interface CommonEndpoint {
+  id: string;
   /** 名称 */
   name: string;
   /** 地址 */
@@ -16,7 +13,7 @@ export interface Endpoint {
   /** 加密方式 */
   cipher?: string;
   /** 传输协议 */
-  transport?: string;
+  transport?: NetworkType;
   /** 订阅分组 ID */
   subId?: number;
   /** 延迟，毫秒 */
@@ -32,3 +29,7 @@ export interface Endpoint {
   /** 总下载流量，字节 */
   totalDownload?: number;
 }
+
+/** 节点 */
+type Endpoint = CommonEndpoint & VMessEndpoint;
+export default Endpoint;

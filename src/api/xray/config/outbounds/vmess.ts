@@ -1,8 +1,11 @@
+/** 加密方式 */
+export type VMessSecurity = 'aes-128-gcm' | 'chacha20-poly1305' | 'auto' | 'none' | 'zero';
+
 interface UserObject {
   /** 用户 ID */
   id: string;
   /** 加密方式 */
-  security?: 'aes-128-gcm' | 'chacha20-poly1305' | 'auto' | 'none' | 'zero';
+  security?: VMessSecurity;
   /** 用户等级，连接会使用这个用户等级对应的本地策略。默认为 0。 */
   level?: number;
 }

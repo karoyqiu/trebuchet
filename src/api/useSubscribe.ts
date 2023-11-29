@@ -2,9 +2,9 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { decode } from 'js-base64';
 import { useEffect } from 'react';
 import db from '../db';
-import { Endpoint } from '../db/endpoint';
+import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
-import { parse as parseVmess } from './protocols/vmess';
+import { parseVMess as parseVmess } from './xray/protocols/vmess';
 
 // const SCHEME_HTTP = 'http://';
 // const SCHEME_HTTPS = 'https://';

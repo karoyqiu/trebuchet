@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Endpoint } from './endpoint';
+import Endpoint from './endpoint';
 import { Subscription } from './subscription';
 
 class Database extends Dexie {
@@ -11,7 +11,7 @@ class Database extends Dexie {
 
     this.version(1).stores({
       subs: '++id, &name, &url',
-      endpoints: '[host+port], subId',
+      endpoints: '[host+port], &id, subId',
     });
   }
 }

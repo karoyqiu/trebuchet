@@ -176,10 +176,12 @@ interface SockoptObject {
   interface?: string;
 }
 
+export type NetworkType = 'tcp' | 'kcp' | 'ws' | 'http' | 'domainsocket' | 'quic' | 'grpc';
+
 export type StreamSettingsObject = TransportObject &
   (InsecureTransportObject | TLSTransportObject | RealityTransportObject) & {
     /** 连接的数据流所使用的传输方式类型，默认值为 `"tcp"`。 */
-    network?: 'tcp' | 'kcp' | 'ws' | 'http' | 'domainsocket' | 'quic' | 'grpc';
+    network?: NetworkType;
     /** 透明代理相关的具体配置。 */
     sockopt?: SockoptObject;
   };

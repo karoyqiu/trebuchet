@@ -18,6 +18,7 @@ const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
 class Xray {
   private cmd: Command;
   private child: Child | null;
+  private config: ConfigObject;
 
   /** API 监听端口。 */
   public apiPort: number;
@@ -27,10 +28,13 @@ class Xray {
    */
   constructor() {
     this.child = null;
+    this.config = { inbounds: [], outbounds: [] };
     this.apiPort = 1099;
     this.cmd = Command.sidecar('xray/xray', ['-config', 'stdin:'], { encoding: 'utf-8' });
-    this.cmd.stdout.on('data', (line) => console.log(`--> ${line}`));
-    this.cmd.stderr.on('data', (line) => console.warn(`--> ${line}`));
+
+    const redir = this.redirectLog.bind(this);
+    this.cmd.stdout.on('data', redir);
+    this.cmd.stderr.on('data', redir);
   }
 
   /**
@@ -74,7 +78,7 @@ class Xray {
     }
 
     // 写入配置文件
-    const config: ConfigObject = {
+    this.config = {
       api: {
         tag: 'api',
         services: ['StatsService'],
@@ -85,7 +89,7 @@ class Xray {
       log: {
         access: '',
         error: '',
-        loglevel: 'warning',
+        loglevel: 'debug',
       },
       policy: {
         system: {
@@ -177,13 +181,9 @@ class Xray {
       outbounds,
     };
 
-    console.debug('Xray config', config);
-
     // 启动 xray
     const child = await this.cmd.spawn();
     console.info(`Xray started with PID ${child.pid}`);
-
-    await child.write(JSON.stringify(config));
 
     this.child = child;
   }
@@ -193,6 +193,15 @@ class Xray {
     if (this.child) {
       await this.child.kill();
       this.child = null;
+    }
+  }
+
+  private async redirectLog(line: string) {
+    console.log(`--> ${line}`);
+
+    if (this.child && line.includes('Reading config')) {
+      console.debug('Writing config', this.config);
+      await this.child.write(JSON.stringify(this.config));
     }
   }
 }

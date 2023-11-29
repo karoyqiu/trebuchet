@@ -49,6 +49,9 @@ function App() {
             <li>
               <LinkMenuItem to="ep">Endpoints</LinkMenuItem>
             </li>
+            <li>
+              <LinkMenuItem to="sub">Subscriptions</LinkMenuItem>
+            </li>
           </ul>
         </nav>
         <div className="divider my-0" />

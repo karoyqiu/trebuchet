@@ -5,6 +5,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import App from './App';
 import EndpointPage from './pages/EndpointPage';
 import GeneralPage from './pages/GeneralPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 import './styles.css';
 
 const router = createBrowserRouter([
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
       {
         path: 'ep',
         element: <EndpointPage />,
+      },
+      {
+        path: 'sub',
+        element: <SubscriptionPage />,
       },
     ],
   },

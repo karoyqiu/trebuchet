@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { CustomContentProps, SnackbarContent } from 'notistack';
 import React from 'react';
+import MaterialSymbol from './MaterialSymbol';
 
 const Alert = React.forwardRef<HTMLDivElement, CustomContentProps>((props, ref) => {
   const { message, variant, style } = props;
@@ -15,7 +16,7 @@ const Alert = React.forwardRef<HTMLDivElement, CustomContentProps>((props, ref) 
         break;
       case 'success':
         className = 'alert-success';
-        icon = <span className="material-symbols-outlined">check_circle</span>;
+        icon = <MaterialSymbol symbol="check_circle" />;
         break;
       case 'warning':
         className = 'alert-warning';

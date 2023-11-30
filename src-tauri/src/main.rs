@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod error;
-use std::{env, fs};
+use std::{env, fs, net::TcpListener};
 
 use error::{map_anything, Result};
 use tauri::App;
@@ -12,6 +12,14 @@ use tauri::App;
 async fn download(url: &str) -> Result<String> {
   let body = reqwest::get(url).await?.text().await?;
   Ok(body)
+}
+
+// 获取可用于侦听的 TCP 端口。
+#[tauri::command]
+fn get_available_port() -> Result<u16> {
+  let listener = TcpListener::bind("127.0.0.1:0")?;
+  let addr = listener.local_addr()?;
+  Ok(addr.port())
 }
 
 /// 如果指定的资源文件在目标目录中不存在，则复制一份。
@@ -59,7 +67,7 @@ fn main() {
 
       Ok(())
     })
-    .invoke_handler(tauri::generate_handler![download])
+    .invoke_handler(tauri::generate_handler![download, get_available_port])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

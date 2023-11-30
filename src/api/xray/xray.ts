@@ -3,6 +3,7 @@ import { BaseDirectory, removeFile, writeTextFile } from '@tauri-apps/api/fs';
 import { tempdir } from '@tauri-apps/api/os';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
+import { invoke } from '@tauri-apps/api/tauri';
 import { nanoid } from 'nanoid';
 import Endpoint from '../../db/endpoint';
 import { settings } from '../settings';
@@ -28,9 +29,7 @@ const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
 class Xray {
   private child: Child | null;
   private filename;
-
-  /** API 监听端口。 */
-  public apiPort: number;
+  private aport;
 
   /**
    * 构建 xray。
@@ -38,7 +37,12 @@ class Xray {
   constructor() {
     this.child = null;
     this.filename = '';
-    this.apiPort = 1099;
+    this.aport = 0;
+  }
+
+  /** API 监听端口。 */
+  public get apiPort() {
+    return this.aport;
   }
 
   /**
@@ -51,6 +55,9 @@ class Xray {
       console.warn('Xray already started.');
       return;
     }
+
+    // 获取 API 端口
+    this.aport = await invoke<number>('get_available_port');
 
     // 用户配置
     const us = settings.get();
@@ -174,7 +181,7 @@ class Xray {
         },
         {
           tag: 'api',
-          port: this.apiPort,
+          port: this.aport,
           listen: '127.0.0.1',
           protocol: 'dokodemo-door',
           settings: {
@@ -224,6 +231,7 @@ class Xray {
       ]);
 
       this.child = null;
+      this.aport = 0;
       this.filename = '';
     }
   }

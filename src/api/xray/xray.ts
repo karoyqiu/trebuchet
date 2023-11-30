@@ -1,6 +1,7 @@
-import { BaseDirectory, createDir, writeTextFile } from '@tauri-apps/api/fs';
+import { getName } from '@tauri-apps/api/app';
+import { BaseDirectory, removeFile, writeTextFile } from '@tauri-apps/api/fs';
 import { tempdir } from '@tauri-apps/api/os';
-import { join } from '@tauri-apps/api/path';
+import { appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
 import { nanoid } from 'nanoid';
 import Endpoint from '../../db/endpoint';
@@ -8,6 +9,9 @@ import { settings } from '../settings';
 import ConfigObject from './config';
 import OutboundObject from './config/outbound';
 import { vmessToOutbound } from './protocols/vmess';
+
+let subDir = '';
+let dataDir = '';
 
 const redirectLog = (line: string) => console.log(`--> ${line}`);
 
@@ -23,6 +27,7 @@ const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
 /** Xray 控制类 */
 class Xray {
   private child: Child | null;
+  private filename;
 
   /** API 监听端口。 */
   public apiPort: number;
@@ -32,6 +37,7 @@ class Xray {
    */
   constructor() {
     this.child = null;
+    this.filename = '';
     this.apiPort = 1099;
   }
 
@@ -179,24 +185,24 @@ class Xray {
       outbounds,
     };
 
-    const subdir = 'trebuchet';
+    if (!subDir) {
+      [subDir, dataDir] = await Promise.all([getName(), appDataDir()]);
+    }
+
     const filename = `${nanoid()}.json`;
-    const [temp] = await Promise.all([
-      tempdir(),
-      createDir(subdir, { dir: BaseDirectory.Temp, recursive: true }),
-    ]);
-    const [dir] = await Promise.all([
-      join(temp, subdir),
-      writeTextFile(`${subdir}/${filename}`, JSON.stringify(config, undefined, 2), {
+    this.filename = `${subDir}/${filename}`;
+    const temp = await tempdir();
+    const [fullName] = await Promise.all([
+      join(temp, this.filename),
+      writeTextFile(this.filename, JSON.stringify(config, undefined, 2), {
         dir: BaseDirectory.Temp,
       }),
     ]);
 
     // 启动 xray
-    const cmd = Command.sidecar('xray/xray', ['-config', filename], {
-      cwd: dir,
+    const cmd = Command.sidecar('xray/xray', ['-config', fullName], {
       env: {
-        XRAY_LOCATION_ASSET: dir,
+        XRAY_LOCATION_ASSET: dataDir,
       },
       encoding: 'utf-8',
     });
@@ -212,8 +218,13 @@ class Xray {
   /** 停止 xray。 */
   public async stop() {
     if (this.child) {
-      await this.child.kill();
+      await Promise.all([
+        this.child.kill(),
+        removeFile(this.filename, { dir: BaseDirectory.Temp }),
+      ]);
+
       this.child = null;
+      this.filename = '';
     }
   }
 }

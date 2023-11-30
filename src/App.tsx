@@ -2,7 +2,7 @@ import { appWindow } from '@tauri-apps/api/window';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import useSubscribe from './api/useSubscribe';
+import useSubscribe, { updateSubscriptions } from './api/useSubscribe';
 import Alert from './components/Alert';
 import ConnectionState from './components/ConnectionState';
 import LinkMenuItem from './components/LinkMenuItem';
@@ -27,7 +27,10 @@ function App() {
 
   // 加载完成之后再显示窗口
   React.useEffect(() => {
-    appWindow.show().catch(() => {});
+    appWindow
+      .show()
+      .then(updateSubscriptions)
+      .catch(() => {});
   }, []);
 
   return (

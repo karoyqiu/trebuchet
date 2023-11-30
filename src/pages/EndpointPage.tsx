@@ -6,7 +6,7 @@ export default function EndpointPage() {
       <div className="join p-1">
         <button className="btn">Test speed</button>
       </div>
-      <div className="divider m-0" />
+      <div className="divider m-0 h-0" />
       <div className="min-h-0 overflow-y-auto">
         <EndpointList />
       </div>

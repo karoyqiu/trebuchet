@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import React from 'react';
-import { updateSubscription } from '../api/useSubscribe';
+import { updateSubscription } from '../api/subscription';
 import db from '../db';
 import { Subscription } from '../db/subscription';
 import MaterialSymbol from './MaterialSymbol';

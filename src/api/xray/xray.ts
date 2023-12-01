@@ -6,7 +6,7 @@ import { Child, Command } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
 import { nanoid } from 'nanoid';
 import Endpoint from '../../db/endpoint';
-import { settings } from '../settings';
+import settings from '../settings';
 import ConfigObject from './config';
 import OutboundObject from './config/outbound';
 import { vmessToOutbound } from './protocols/vmess';

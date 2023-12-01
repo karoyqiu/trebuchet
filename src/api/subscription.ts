@@ -3,6 +3,7 @@ import { decode } from 'js-base64';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
+import { setSubUpdating } from './useSubscriptionUpdating';
 import { parseVMess as parseVmess } from './xray/protocols/vmess';
 
 // const SCHEME_HTTP = 'http://';
@@ -37,6 +38,8 @@ const urlToEndpoint = (s: string) => {
  */
 export const updateSubscription = async (sub: Subscription) => {
   console.log(`Updating sub ${sub.name}`);
+  setSubUpdating(sub.id!, true);
+
   // 下载订阅
   const body = await invoke<string>('download', { url: sub.url });
   // base64
@@ -63,6 +66,8 @@ export const updateSubscription = async (sub: Subscription) => {
     await db.endpoints.bulkPut(eps);
     console.log(`${eps.length} endpoints added`);
   }
+
+  setSubUpdating(sub.id!, false);
 };
 
 /** 更新订阅 */

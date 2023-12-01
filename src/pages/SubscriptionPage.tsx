@@ -1,4 +1,5 @@
 import React from 'react';
+import { updateSubscriptions } from '../api/subscription';
 import MaterialSymbol from '../components/MaterialSymbol';
 import SubscriptionDialog from '../components/SubscriptionDialog';
 import SubscriptionList from '../components/SubscriptionList';
@@ -26,7 +27,7 @@ export default function SubscriptionPage() {
           <MaterialSymbol symbol="add" />
           Add
         </button>
-        <button className="btn btn-ghost join-item">
+        <button className="btn btn-ghost join-item" onClick={() => updateSubscriptions()}>
           <MaterialSymbol symbol="update" />
           Update all
         </button>

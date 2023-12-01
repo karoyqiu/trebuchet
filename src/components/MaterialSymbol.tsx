@@ -1,9 +1,12 @@
-import { MaterialSymbol as Symbol } from 'material-symbols';
+import clsx from 'clsx';
+import { MaterialSymbol as MSymbol } from 'material-symbols';
 
 type MaterialSymbolProps = {
-  symbol: Symbol;
+  symbol: MSymbol;
+  className?: string;
 };
 
-export default function MaterialSymbol({ symbol }: MaterialSymbolProps) {
-  return <span className="material-symbols-outlined">{symbol}</span>;
+export default function MaterialSymbol(props: MaterialSymbolProps) {
+  const { symbol, className } = props;
+  return <span className={clsx('material-symbols-outlined', className)}>{symbol}</span>;
 }

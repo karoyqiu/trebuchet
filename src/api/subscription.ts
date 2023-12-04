@@ -3,8 +3,9 @@ import { decode } from 'js-base64';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
+import { setCurrent } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
-import { setSubUpdating } from './useSubscriptionUpdating';
+import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
 import { parseTrojan } from './xray/protocols/trojan';
 import { parseVMess as parseVmess } from './xray/protocols/vmess';
 
@@ -41,6 +42,11 @@ const urlToEndpoint = (s: string) => {
  * @param sub 要更新的订阅
  */
 export const updateSubscription = async (sub: Subscription) => {
+  if (updatingSubs.get().has(sub.id!)) {
+    // 不能重复更新
+    return;
+  }
+
   console.log(`Updating sub ${sub.name}`);
   setSubUpdating(sub.id!, true);
 
@@ -85,4 +91,11 @@ export const updateSubscriptions = async () => {
   await Promise.allSettled(subs.map(updateSubscription));
 
   console.info('Subscriptions updated');
+
+  // 更新后自动选择最快的节点
+  const all = await db.endpoints.toCollection().sortBy('latency');
+
+  if (all.length > 0) {
+    await setCurrent(all[0]);
+  }
 };

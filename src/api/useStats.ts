@@ -77,7 +77,13 @@ const useStats = () => {
 
   React.useEffect(() => {
     const timer = setInterval(async () => {
-      setStats(await queryStats());
+      const s = await queryStats();
+      setStats((old) => ({
+        download: Math.max(0, s.download - old.download),
+        upload: Math.max(0, s.upload - old.upload),
+        uptime: s.uptime,
+        connected: s.connected,
+      }));
     }, 1000);
 
     return () => clearInterval(timer);

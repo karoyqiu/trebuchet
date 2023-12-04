@@ -2,9 +2,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import React from 'react';
 import xray from '../api/xray/xray';
 import db from '../db';
+import LatencyBadge from './LatencyBadge';
 
 export default function EndpointList() {
-  const items = useLiveQuery(() => db.endpoints.toArray(), []) ?? [];
+  const items = useLiveQuery(() => db.endpoints.toCollection().sortBy('latency'), []) ?? [];
   const [selected, setSelected] = React.useState('');
 
   return (
@@ -26,8 +27,9 @@ export default function EndpointList() {
               <p className="text-lg font-bold">{item.name}</p>
               <p className="text-sm opacity-50">{`${item.host}:${item.port}`}</p>
             </td>
-            <td>
-              <div className="badge">{item.protocol}</div>
+            <td className="whitespace-nowrap">
+              <div className="badge badge-sm">{item.protocol}</div>
+              <LatencyBadge latency={item.latency ?? 0} />
             </td>
           </tr>
         ))}

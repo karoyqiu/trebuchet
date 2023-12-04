@@ -16,7 +16,7 @@ interface CommonEndpoint {
   transport?: NetworkType;
   /** 订阅分组 ID */
   subId?: number;
-  /** 延迟，毫秒 */
+  /** 延迟，毫秒；-1 表示正在测试 */
   latency?: number;
   /** 速度，字节/秒 */
   speed?: number;

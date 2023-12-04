@@ -2,24 +2,53 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod error;
-use std::{env, fs, net::TcpListener};
+use std::{
+  env, fs,
+  net::TcpListener,
+  time::{Duration, Instant},
+};
 
 use error::{map_anything, Result};
 use tauri::App;
 
-// 下载指定 URL，并返回文本内容。
+/// 下载指定 URL，并返回文本内容。
 #[tauri::command]
 async fn download(url: &str) -> Result<String> {
   let body = reqwest::get(url).await?.text().await?;
   Ok(body)
 }
 
-// 获取可用于侦听的 TCP 端口。
+/// 获取可用于侦听的 TCP 端口。
 #[tauri::command]
 fn get_available_port() -> Result<u16> {
   let listener = TcpListener::bind("127.0.0.1:0")?;
   let addr = listener.local_addr()?;
   Ok(addr.port())
+}
+
+/// 测试指定代理的延迟，结果为毫秒。
+#[tauri::command]
+async fn test_latency(proxy_port: u16) -> Result<i32> {
+  let proxy_url = format!("socks5://127.0.0.1:{}", proxy_port);
+  let client = reqwest::Client::builder()
+    .timeout(Duration::new(30, 0))
+    .proxy(reqwest::Proxy::all(proxy_url)?)
+    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0")
+    .build()?;
+
+  let now = Instant::now();
+  let status = client
+    .get("https://www.gstatic.com/generate_204")
+    .send()
+    .await?
+    .status();
+
+  if status.is_success() {
+    Ok(now.elapsed().as_millis() as i32)
+  } else {
+    // 999999 表示超时或失败
+    Ok(999999)
+  }
 }
 
 /// 如果指定的资源文件在目标目录中不存在，则复制一份。
@@ -67,7 +96,11 @@ fn main() {
 
       Ok(())
     })
-    .invoke_handler(tauri::generate_handler![download, get_available_port])
+    .invoke_handler(tauri::generate_handler![
+      download,
+      get_available_port,
+      test_latency
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

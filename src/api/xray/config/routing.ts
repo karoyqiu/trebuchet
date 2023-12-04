@@ -3,7 +3,7 @@
  *
  * _当多个属性同时指定时，这些属性需要**同时**满足，才可以使当前规则生效。_
  */
-interface RuleObject {
+export interface RuleObject {
   /** 域名匹配算法，根据不同的设置使用不同的算法。此处选项优先级高于 `RoutingObject` 中配置的 `domainMatcher`。 */
   domainMatcher?: 'hybrid' | 'linear';
   /** 目前只支持 `"field"` 这一个选项。 */

@@ -1,6 +1,6 @@
 import { decode } from 'js-base64';
-import { nanoid } from 'nanoid';
 import Endpoint from '../../../db/endpoint';
+import randomid from '../../randomid';
 import OutboundObject from '../config/outbound';
 import { VMessSecurity } from '../config/outbounds/vmess';
 import { NetworkType, StreamSettingsObject } from '../config/transports';
@@ -38,7 +38,7 @@ export const parseVMess = (url: URL): Endpoint => {
   const qrcode = JSON.parse(json) as VMessParams;
 
   return {
-    id: nanoid(),
+    id: randomid(),
     protocol: 'vmess',
     params: qrcode,
     name: qrcode.ps,

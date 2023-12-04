@@ -1,4 +1,5 @@
 import { NetworkType } from '../api/xray/config/transports';
+import { TrojanEndpoint } from '../api/xray/protocols/trojan';
 import { VMessEndpoint } from '../api/xray/protocols/vmess';
 
 /** 节点 */
@@ -31,5 +32,5 @@ interface CommonEndpoint {
 }
 
 /** 节点 */
-type Endpoint = CommonEndpoint & VMessEndpoint;
+type Endpoint = CommonEndpoint & (VMessEndpoint | TrojanEndpoint);
 export default Endpoint;

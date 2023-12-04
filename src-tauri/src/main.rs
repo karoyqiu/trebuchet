@@ -38,7 +38,7 @@ async fn test_latency(proxy_port: u16) -> Result<i32> {
 
   let now = Instant::now();
   let status = client
-    .get("https://www.gstatic.com/generate_204")
+    .head("https://www.google.com/")
     .send()
     .await?
     .status();

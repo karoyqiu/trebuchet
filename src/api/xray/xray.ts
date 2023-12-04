@@ -4,13 +4,14 @@ import { tempdir } from '@tauri-apps/api/os';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
-import { nanoid } from 'nanoid';
 import Endpoint from '../../db/endpoint';
+import randomid from '../randomid';
 import settings from '../settings';
 import ConfigObject from './config';
 import InboundObject from './config/inbound';
 import OutboundObject from './config/outbound';
 import { RuleObject } from './config/routing';
+import { trojanToOutbound } from './protocols/trojan';
 import { vmessToOutbound } from './protocols/vmess';
 
 let subDir = '';
@@ -97,6 +98,8 @@ const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
   switch (ep.protocol) {
     case 'vmess':
       return vmessToOutbound(ep.params);
+    case 'trojan':
+      return trojanToOutbound(ep.params);
   }
 
   return null;
@@ -241,7 +244,7 @@ export class Xray {
       [subDir, dataDir] = await Promise.all([getName(), appDataDir()]);
     }
 
-    const filename = `${nanoid()}.json`;
+    const filename = `${randomid()}.json`;
     this.filename = `${subDir}/${filename}`;
     const temp = await tempdir();
     const [fullName] = await Promise.all([

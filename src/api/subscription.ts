@@ -4,6 +4,7 @@ import db from '../db';
 import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
 import { setSubUpdating } from './useSubscriptionUpdating';
+import { parseTrojan } from './xray/protocols/trojan';
 import { parseVMess as parseVmess } from './xray/protocols/vmess';
 
 // const SCHEME_HTTP = 'http://';
@@ -21,6 +22,8 @@ const urlToEndpoint = (s: string) => {
     switch (url.protocol) {
       case 'vmess:':
         return parseVmess(url);
+      case 'trojan:':
+        return parseTrojan(url);
       default:
         console.warn('Unsupported protocol', s);
         break;

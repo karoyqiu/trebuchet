@@ -3,6 +3,7 @@ import { decode } from 'js-base64';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
+import { testLatencies } from './endpointTest';
 import { setSubUpdating } from './useSubscriptionUpdating';
 import { parseTrojan } from './xray/protocols/trojan';
 import { parseVMess as parseVmess } from './xray/protocols/vmess';
@@ -71,6 +72,9 @@ export const updateSubscription = async (sub: Subscription) => {
   }
 
   setSubUpdating(sub.id!, false);
+
+  // 更新后自动测试延迟
+  await testLatencies(eps);
 };
 
 /** 更新订阅 */

@@ -15,12 +15,12 @@ const testLatency = async (ep: Endpoint, proxyPort: number) => {
 
 // 测试指定节点列表的延迟
 export const testLatencies = async (eps: Endpoint[]) => {
-  await db.endpoints.toCollection().modify({ latency: -1 });
-
   const xrays: Xray[] = [];
 
   // 这里一个一个地启动，因为每次都要找一个未使用的端口
   for (const ep of eps) {
+    await db.endpoints.where('id').equals(ep.id).modify({ latency: -1 });
+
     const xray = new Xray();
     await xray.start(ep, true);
     xrays.push(xray);

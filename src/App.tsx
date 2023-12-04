@@ -3,6 +3,7 @@ import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { updateSubscriptions } from './api/subscription';
+import useStats from './api/useStats';
 import useSubscribe from './api/useSubscribe';
 import Alert from './components/Alert';
 import ConnectionState from './components/ConnectionState';
@@ -10,8 +11,6 @@ import LinkMenuItem from './components/LinkMenuItem';
 import Speedometer from './components/Speedometer';
 
 function App() {
-  useSubscribe();
-
   // 加载完成之后再显示窗口
   React.useEffect(() => {
     appWindow
@@ -19,6 +18,10 @@ function App() {
       .then(updateSubscriptions)
       .catch(() => {});
   }, []);
+
+  useSubscribe();
+
+  const stats = useStats();
 
   return (
     <div className="flex w-full h-full">
@@ -28,7 +31,7 @@ function App() {
       />
       <div className="flex flex-col w-48 bg-base-300">
         <div className="p-6">
-          <Speedometer download={0} upload={0} />
+          <Speedometer download={stats.download} upload={stats.upload} />
         </div>
         <div className="divider my-0" />
         <nav className="flex-1">
@@ -46,7 +49,7 @@ function App() {
         </nav>
         <div className="divider my-0" />
         <div className="p-4">
-          <ConnectionState connected={false} seconds={12345} />
+          <ConnectionState connected={stats.connected} seconds={stats.uptime} />
         </div>
       </div>
       <div className="flex-1 max-h-full">

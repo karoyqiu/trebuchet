@@ -3,7 +3,7 @@ import { decode } from 'js-base64';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
-import { setCurrent } from './currentEndpoint';
+import { selectFastest } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
 import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
 import { parseTrojan } from './xray/protocols/trojan';
@@ -93,9 +93,5 @@ export const updateSubscriptions = async () => {
   console.info('Subscriptions updated');
 
   // 更新后自动选择最快的节点
-  const all = await db.endpoints.toCollection().sortBy('latency');
-
-  if (all.length > 0) {
-    await setCurrent(all[0]);
-  }
+  await selectFastest();
 };

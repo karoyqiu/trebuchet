@@ -1,3 +1,4 @@
+import { selectFastest } from '../api/currentEndpoint';
 import { testLatencies } from '../api/endpointTest';
 import EndpointList from '../components/EndpointList';
 import MaterialSymbol from '../components/MaterialSymbol';
@@ -12,6 +13,7 @@ export default function EndpointPage() {
           onClick={async () => {
             const all = await db.endpoints.toArray();
             await testLatencies(all);
+            await selectFastest();
           }}
         >
           <MaterialSymbol symbol="network_check" />

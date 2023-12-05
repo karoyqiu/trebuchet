@@ -1,4 +1,5 @@
 import { entity } from 'simpler-state';
+import db from '../db';
 import Endpoint from '../db/endpoint';
 
 export const current = entity<Endpoint | null>(null);
@@ -21,4 +22,15 @@ export const setCurrent = async (ep: Endpoint) => {
   current.set(ep);
   await window.xray.stop();
   await window.xray.start(ep);
+};
+
+/**
+ * 选择最快的节点。
+ */
+export const selectFastest = async () => {
+  const all = await db.endpoints.toCollection().sortBy('latency');
+
+  if (all.length > 0) {
+    await setCurrent(all[0]);
+  }
 };

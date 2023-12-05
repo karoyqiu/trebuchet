@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import db from '../db';
+import { selectFastest } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
 import settings from './settings';
 import { updateSubscriptions } from './subscription';
@@ -19,6 +20,7 @@ const useSubscribe = () => {
     const timer = setInterval(async () => {
       const all = await db.endpoints.toArray();
       await testLatencies(all);
+      await selectFastest();
     }, epTestInterval * 60 * 1000);
     return () => clearInterval(timer);
   }, [epTestInterval]);

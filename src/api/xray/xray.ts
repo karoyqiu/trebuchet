@@ -17,7 +17,11 @@ import { vmessToOutbound } from './protocols/vmess';
 let subDir = '';
 let dataDir = '';
 
-const redirectLog = (line: string) => console.log(`--> ${line}`);
+const redirectLog = (line: string) => {
+  if (!line.includes('api -> api')) {
+    console.log(`--> ${line}`);
+  }
+};
 
 /**
  * 获取入站配置。

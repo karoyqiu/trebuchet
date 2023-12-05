@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import db from '../db';
 import Endpoint from '../db/endpoint';
-import { Xray } from './xray/xray';
+import Xray from './xray/xray';
 
 const testLatency = async (ep: Endpoint, proxyPort: number) => {
   try {

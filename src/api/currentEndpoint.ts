@@ -1,6 +1,5 @@
 import { entity } from 'simpler-state';
 import Endpoint from '../db/endpoint';
-import xray from './xray/xray';
 
 export const current = entity<Endpoint | null>(null);
 
@@ -20,6 +19,6 @@ export const isCurrent = (ep: Endpoint) => {
  */
 export const setCurrent = async (ep: Endpoint) => {
   current.set(ep);
-  await xray.stop();
-  await xray.start(ep);
+  await window.xray.stop();
+  await window.xray.start(ep);
 };

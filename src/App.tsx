@@ -31,7 +31,7 @@ function App() {
       />
       <div className="flex flex-col w-48 bg-base-300">
         <div className="p-6">
-          <Speedometer download={stats.download} upload={stats.upload} />
+          <Speedometer download={stats.deltaDownload} upload={stats.deltaUpload} />
         </div>
         <div className="divider my-0" />
         <nav className="flex-1">

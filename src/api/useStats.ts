@@ -1,10 +1,11 @@
 import { Command } from '@tauri-apps/api/shell';
 import React from 'react';
-import xray from './xray/xray';
 
 type Stats = {
-  download: number;
-  upload: number;
+  totalDownload: number;
+  totalUpload: number;
+  deltaDownload: number;
+  deltaUpload: number;
   uptime: number;
   connected: boolean;
 };
@@ -24,22 +25,24 @@ type SysObject = {
 
 const queryStats = async () => {
   const stats: Stats = {
-    download: 0,
-    upload: 0,
+    totalDownload: 0,
+    totalUpload: 0,
+    deltaDownload: 0,
+    deltaUpload: 0,
     uptime: 0,
     connected: false,
   };
 
-  if (xray.apiPort > 0) {
+  if (window.xray.apiPort > 0) {
     const query = Command.sidecar('xray/xray', [
       'api',
       'statsquery',
-      `--server=127.0.0.1:${xray.apiPort}`,
+      `--server=127.0.0.1:${window.xray.apiPort}`,
     ]);
     const sys = Command.sidecar('xray/xray', [
       'api',
       'statssys',
-      `--server=127.0.0.1:${xray.apiPort}`,
+      `--server=127.0.0.1:${window.xray.apiPort}`,
     ]);
 
     const [querychild, syschild] = await Promise.all([query.execute(), sys.execute()]);
@@ -49,9 +52,9 @@ const queryStats = async () => {
 
       for (const { name, value } of obj.stat) {
         if (name === 'outbound>>>proxy>>>traffic>>>uplink') {
-          stats.upload = parseInt(value, 10);
+          stats.totalUpload = parseInt(value, 10);
         } else if (name === 'outbound>>>proxy>>>traffic>>>downlink') {
-          stats.download = parseInt(value, 10);
+          stats.totalDownload = parseInt(value, 10);
         }
       }
     }
@@ -59,9 +62,8 @@ const queryStats = async () => {
     if (syschild.code === 0) {
       const obj = JSON.parse(syschild.stdout) as SysObject;
       stats.uptime = obj.Uptime;
+      stats.connected = true;
     }
-
-    stats.connected = true;
   }
 
   return stats;
@@ -69,8 +71,10 @@ const queryStats = async () => {
 
 const useStats = () => {
   const [stats, setStats] = React.useState<Stats>({
-    download: 0,
-    upload: 0,
+    totalDownload: 0,
+    totalUpload: 0,
+    deltaDownload: 0,
+    deltaUpload: 0,
     uptime: 0,
     connected: false,
   });
@@ -79,10 +83,9 @@ const useStats = () => {
     const timer = setInterval(async () => {
       const s = await queryStats();
       setStats((old) => ({
-        download: Math.max(0, s.download - old.download),
-        upload: Math.max(0, s.upload - old.upload),
-        uptime: s.uptime,
-        connected: s.connected,
+        ...s,
+        deltaDownload: Math.max(0, s.totalDownload - old.totalDownload),
+        deltaUpload: Math.max(0, s.totalUpload - old.totalUpload),
       }));
     }, 1000);
 

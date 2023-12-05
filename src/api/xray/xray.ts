@@ -106,7 +106,7 @@ const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
 };
 
 /** Xray 控制类 */
-export class Xray {
+export default class Xray {
   private child: Child | null;
   private filename;
   private aport;
@@ -223,7 +223,7 @@ export class Xray {
       log: {
         access: '',
         error: '',
-        loglevel: 'debug',
+        loglevel: 'warning',
       },
       policy: {
         system: {
@@ -282,6 +282,3 @@ export class Xray {
     }
   }
 }
-
-const xray = new Xray();
-export default xray;

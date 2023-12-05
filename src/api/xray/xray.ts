@@ -5,7 +5,6 @@ import { appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
 import Endpoint from '../../db/endpoint';
-import randomid from '../randomid';
 import settings from '../settings';
 import ConfigObject from './config';
 import InboundObject from './config/inbound';
@@ -248,7 +247,7 @@ export default class Xray {
       [subDir, dataDir] = await Promise.all([getName(), appDataDir()]);
     }
 
-    const filename = `${randomid()}.json`;
+    const filename = `${endpoint.id}.json`;
     this.filename = `${subDir}/${filename}`;
     const temp = await tempdir();
     const [fullName] = await Promise.all([

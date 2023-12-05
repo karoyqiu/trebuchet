@@ -19,9 +19,11 @@ export const isCurrent = (ep: Endpoint) => {
  * @param ep 节点
  */
 export const setCurrent = async (ep: Endpoint) => {
-  current.set(ep);
-  await window.xray.stop();
-  await window.xray.start(ep);
+  if (!isCurrent(ep)) {
+    current.set(ep);
+    await window.xray.stop();
+    await window.xray.start(ep);
+  }
 };
 
 /**

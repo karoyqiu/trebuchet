@@ -18,7 +18,7 @@ const defaultSettings: Settings = {
   httpPort: 1090,
   // 1 小时更新一次
   subUpdateInterval: 60,
-  epTestInterval: 5,
+  epTestInterval: 3,
 };
 
 const settings = entity(defaultSettings, [persistence('settings')]);

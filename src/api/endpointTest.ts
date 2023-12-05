@@ -3,13 +3,13 @@ import db from '../db';
 import Endpoint from '../db/endpoint';
 import Xray from './xray/xray';
 
-const testLatency = async (ep: Endpoint, proxyPort: number) => {
+export const testLatency = async (proxyPort: number) => {
   try {
     const latency = await invoke<number>('test_latency', { proxyPort });
-    await db.endpoints.where('id').equals(ep.id).modify({ latency });
+    return latency;
   } catch (e) {
     // 测试失败
-    await db.endpoints.where('id').equals(ep.id).modify({ latency: 999999 });
+    return 999999;
   }
 };
 
@@ -27,11 +27,14 @@ export const testLatencies = async (eps: Endpoint[]) => {
   }
 
   // 然后同时测试延迟
-  await Promise.all(
+  await Promise.allSettled(
     eps.map(async (ep, index) => {
       const xray = xrays[index];
-      await testLatency(ep, xray.apiPort);
-      await xray.stop();
+      const latency = await testLatency(xray.apiPort);
+      await Promise.allSettled([
+        db.endpoints.where('id').equals(ep.id).modify({ latency }),
+        xray.stop(),
+      ]);
     })
   );
 };

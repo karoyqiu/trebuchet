@@ -275,7 +275,7 @@ export default class Xray {
   /** 停止 xray。 */
   public async stop() {
     if (this.child) {
-      await Promise.all([
+      await Promise.allSettled([
         this.child.kill(),
         removeFile(this.filename, { dir: BaseDirectory.Temp }),
       ]);

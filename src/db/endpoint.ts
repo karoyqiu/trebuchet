@@ -1,9 +1,8 @@
+import OutboundObject from '../api/xray/config/outbound';
 import { NetworkType } from '../api/xray/config/transports';
-import { TrojanEndpoint } from '../api/xray/protocols/trojan';
-import { VMessEndpoint } from '../api/xray/protocols/vmess';
 
 /** 节点 */
-interface CommonEndpoint {
+export default interface Endpoint {
   id: string;
   /** 名称 */
   name: string;
@@ -29,8 +28,6 @@ interface CommonEndpoint {
   totalUpload?: number;
   /** 总下载流量，字节 */
   totalDownload?: number;
+  /** 出站设置 */
+  outbound: OutboundObject;
 }
-
-/** 节点 */
-type Endpoint = CommonEndpoint & (VMessEndpoint | TrojanEndpoint);
-export default Endpoint;

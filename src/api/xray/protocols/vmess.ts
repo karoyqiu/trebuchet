@@ -1,7 +1,6 @@
 import { decode } from 'js-base64';
 import Endpoint from '../../../db/endpoint';
 import randomid from '../../randomid';
-import OutboundObject from '../config/outbound';
 import { VMessSecurity } from '../config/outbounds/vmess';
 import { NetworkType, StreamSettingsObject } from '../config/transports';
 
@@ -23,33 +22,7 @@ interface VMessParams {
   scy?: VMessSecurity;
 }
 
-export interface VMessEndpoint {
-  protocol: 'vmess';
-  params: VMessParams;
-}
-
-export const parseVMess = (url: URL): Endpoint => {
-  if (url.search) {
-    // TODO: 标准 vmess 协议格式
-    throw new Error('Unsupported vmess url');
-  }
-
-  const json = decode(url.pathname.substring(2));
-  const qrcode = JSON.parse(json) as VMessParams;
-
-  return {
-    id: randomid(),
-    protocol: 'vmess',
-    params: qrcode,
-    name: qrcode.ps,
-    host: qrcode.add,
-    port: parseInt(qrcode.port, 10),
-    cipher: qrcode.scy || 'auto',
-    transport: qrcode.net,
-  };
-};
-
-const vmessSecurity = (params: VMessParams): StreamSettingsObject => {
+const getSecurity = (params: VMessParams): StreamSettingsObject => {
   if (params.tls) {
     return {
       security: 'tls',
@@ -66,8 +39,8 @@ const vmessSecurity = (params: VMessParams): StreamSettingsObject => {
   };
 };
 
-export const vmessToOutbound = (params: VMessParams): OutboundObject => {
-  const streamSettings = vmessSecurity(params);
+const getStreamSettings = (params: VMessParams): StreamSettingsObject => {
+  const streamSettings = getSecurity(params);
   streamSettings.network = params.net;
 
   switch (params.net) {
@@ -88,22 +61,39 @@ export const vmessToOutbound = (params: VMessParams): OutboundObject => {
       break;
   }
 
+  return streamSettings;
+};
+
+const parse = (url: string): Endpoint => {
+  const json = decode(url.substring(8));
+  const params = JSON.parse(json) as VMessParams;
+
   return {
-    protocol: 'vmess',
-    settings: {
-      vnext: [
-        {
-          address: params.add,
-          port: parseInt(params.port, 10),
-          users: [
-            {
-              id: params.id,
-              security: params.scy,
-            },
-          ],
-        },
-      ],
+    id: randomid(),
+    name: params.ps,
+    host: params.add,
+    port: parseInt(params.port, 10),
+    cipher: params.scy || 'auto',
+    transport: params.net,
+    outbound: {
+      protocol: 'vmess',
+      settings: {
+        vnext: [
+          {
+            address: params.add,
+            port: parseInt(params.port, 10),
+            users: [
+              {
+                id: params.id,
+                security: params.scy,
+              },
+            ],
+          },
+        ],
+      },
+      streamSettings: getStreamSettings(params),
     },
-    streamSettings,
   };
 };
+
+export default parse;

@@ -1,80 +1,63 @@
+import { URIComponents } from 'uri-js';
 import Endpoint from '../../../db/endpoint';
 import randomid from '../../randomid';
-import OutboundObject from '../config/outbound';
 import { NetworkType, StreamSettingsObject } from '../config/transports';
 
-interface TrojanParams {
-  password: string;
-  host: string;
-  port: number;
-  security?: string | null;
-  sni?: string | null;
-  type?: NetworkType | null;
-  headerType?: string | null;
-}
-
-export interface TrojanEndpoint {
-  protocol: 'trojan';
-  params: TrojanParams;
-}
-
-const pathRegexp = /\/\/([a-zA-Z0-9-]+)@([^:]+):([0-9]+)/;
-
-export const parseTrojan = (url: URL): Endpoint | null => {
-  const match = pathRegexp.exec(url.pathname);
-
-  if (!match) {
-    return null;
+const getPort = (port?: number | string) => {
+  if (typeof port === 'number') {
+    return port;
   }
 
-  return {
-    id: randomid(),
-    name: decodeURIComponent(url.hash.substring(1)),
-    host: match[2],
-    port: parseInt(match[3], 10),
-    protocol: 'trojan',
-    params: {
-      password: match[1],
-      host: match[2],
-      port: parseInt(match[3], 10),
-      security: url.searchParams.get('security'),
-      sni: url.searchParams.get('sni'),
-      type: url.searchParams.get('type') as NetworkType,
-      headerType: url.searchParams.get('headerType'),
-    },
-  };
+  if (port) {
+    return parseInt(port, 10);
+  }
+
+  return 0;
 };
 
-const trojanSecurity = (params: TrojanParams): StreamSettingsObject => {
-  if (params.security === 'tls') {
+const getStreamSettings = (uri: URIComponents): StreamSettingsObject => {
+  const params = new URLSearchParams(uri.query);
+  const network = (params.get('type') ?? 'tcp') as NetworkType;
+
+  if (params.get('security') === 'tls') {
     return {
+      network,
       security: 'tls',
       tlsSettings: {
-        serverName: params.sni ?? params.host,
+        serverName: params.get('sni') ?? uri.host,
       },
     };
   }
 
   return {
+    network,
     security: 'none',
   };
 };
 
-export const trojanToOutbound = (params: TrojanParams): OutboundObject => {
-  const streamSettings = trojanSecurity(params);
-  streamSettings.network = params.type ?? 'tcp';
+const parse = (uri: URIComponents): Endpoint | null => {
+  const host = uri.host ?? '';
+  const port = getPort(uri.port);
 
   return {
-    protocol: 'trojan',
-    settings: {
-      servers: [
-        {
-          address: params.host,
-          port: params.port,
-          password: params.password,
-        },
-      ],
+    id: randomid(),
+    name: decodeURIComponent(uri.fragment ?? ''),
+    host,
+    port,
+    outbound: {
+      protocol: 'trojan',
+      settings: {
+        servers: [
+          {
+            address: host,
+            port,
+            password: uri.userinfo ?? '',
+          },
+        ],
+      },
+      streamSettings: getStreamSettings(uri),
     },
-    streamSettings,
   };
 };
+
+export default parse;

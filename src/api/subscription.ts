@@ -1,13 +1,13 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { decode } from 'js-base64';
+import { parse as parseUri } from 'uri-js';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
-import { selectFastest } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
 import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
-import { parseTrojan } from './xray/protocols/trojan';
-import { parseVMess as parseVmess } from './xray/protocols/vmess';
+import parseTrojan from './xray/protocols/trojan';
+import parseVMess from './xray/protocols/vmess';
 
 // const SCHEME_HTTP = 'http://';
 // const SCHEME_HTTPS = 'https://';
@@ -19,13 +19,13 @@ import { parseVMess as parseVmess } from './xray/protocols/vmess';
 
 const urlToEndpoint = (s: string) => {
   try {
-    const url = new URL(s);
+    const uri = parseUri(s, { tolerant: true, iri: true, unicodeSupport: true });
 
-    switch (url.protocol) {
-      case 'vmess:':
-        return parseVmess(url);
-      case 'trojan:':
-        return parseTrojan(url);
+    switch (uri.scheme) {
+      case 'vmess':
+        return parseVMess(s);
+      case 'trojan':
+        return parseTrojan(uri);
       default:
         console.warn('Unsupported protocol', s);
         break;
@@ -64,7 +64,7 @@ export const updateSubscription = async (sub: Subscription) => {
   const eps: Endpoint[] = [];
 
   for (const line of lines) {
-    const ep = urlToEndpoint(line);
+    const ep = urlToEndpoint(line.trim());
 
     if (ep) {
       ep.subId = sub.id;
@@ -93,5 +93,5 @@ export const updateSubscriptions = async () => {
   console.info('Subscriptions updated');
 
   // 更新后自动选择最快的节点
-  await selectFastest();
+  //await selectFastest();
 };

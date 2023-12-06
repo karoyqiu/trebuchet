@@ -10,8 +10,6 @@ import ConfigObject from './config';
 import InboundObject from './config/inbound';
 import OutboundObject from './config/outbound';
 import { RuleObject } from './config/routing';
-import { trojanToOutbound } from './protocols/trojan';
-import { vmessToOutbound } from './protocols/vmess';
 
 let subDir = '';
 let dataDir = '';
@@ -97,17 +95,6 @@ const getInbounds = async (forTest?: boolean) => {
   return { inbounds, apiPort: port };
 };
 
-const endpoiontToOutbound = (ep: Endpoint): OutboundObject | null => {
-  switch (ep.protocol) {
-    case 'vmess':
-      return vmessToOutbound(ep.params);
-    case 'trojan':
-      return trojanToOutbound(ep.params);
-  }
-
-  return null;
-};
-
 /** Xray 控制类 */
 export default class Xray {
   private child: Child | null;
@@ -162,12 +149,10 @@ export default class Xray {
     ];
 
     // 出站代理
-    const proxy = endpoiontToOutbound(endpoint);
-
-    if (proxy) {
-      proxy.tag = 'proxy';
-      outbounds.push(proxy);
-    }
+    outbounds.push({
+      ...endpoint.outbound,
+      tag: 'proxy',
+    });
 
     // 路由规则
     const rules: RuleObject[] = [];

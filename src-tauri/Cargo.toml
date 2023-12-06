@@ -1,6 +1,6 @@
 [package]
 name = "trebuchet"
-version = "0.2.0"
+version = "0.3.0"
 description = "Project Trebuchet"
 authors = ["karoyqiu@gmail.com"]
 license = ""
@@ -14,7 +14,6 @@ tauri-build = { version = "1.4", features = [] }
 
 [dependencies]
 tauri = { version = "1.4", features = [
-  "devtools",
   "fs-write-file",
   "fs-remove-file",
   "os-all",

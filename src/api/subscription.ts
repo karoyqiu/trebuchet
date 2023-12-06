@@ -4,8 +4,10 @@ import { parse as parseUri } from 'uri-js';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
+import { selectFastest } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
 import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
+import parseShadowsocks from './xray/protocols/shadowsocks';
 import parseTrojan from './xray/protocols/trojan';
 import parseVMess from './xray/protocols/vmess';
 
@@ -26,6 +28,8 @@ const urlToEndpoint = (s: string) => {
         return parseVMess(s);
       case 'trojan':
         return parseTrojan(uri);
+      case 'ss':
+        return parseShadowsocks(uri);
       default:
         console.warn('Unsupported protocol', s);
         break;
@@ -93,5 +97,5 @@ export const updateSubscriptions = async () => {
   console.info('Subscriptions updated');
 
   // 更新后自动选择最快的节点
-  //await selectFastest();
+  await selectFastest();
 };

@@ -24,8 +24,10 @@ export default function EndpointList() {
               <p className="text-lg font-bold">{item.name}</p>
               <p className="text-sm opacity-50">{`${item.host}:${item.port}`}</p>
             </td>
-            <td className="whitespace-nowrap">
+            <td>
               <div className="badge badge-sm">{item.outbound.protocol}</div>
+            </td>
+            <td className="whitespace-nowrap text-end">
               <LatencyBadge latency={item.latency ?? 0} />
             </td>
           </tr>

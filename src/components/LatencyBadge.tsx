@@ -21,7 +21,7 @@ export default function LatencyBadge(props: LatencyBadgeProps) {
       return [null, 'Untested'];
     }
 
-    let text = ms.format(latency);
+    const text = ms.format(latency);
 
     if (latency <= 200) {
       return ['badge-success', text];
@@ -31,11 +31,11 @@ export default function LatencyBadge(props: LatencyBadgeProps) {
       return ['badge-warning', text];
     }
 
-    if (latency > 30000) {
-      text = 'Timeout';
+    if (latency <= 30000) {
+      return ['badge-error', text];
     }
 
-    return ['badge-error', text];
+    return ['badge-ghost', 'Timeout'];
   }, [latency]);
 
   return <div className={clsx('badge badge-sm', color)}>{text}</div>;

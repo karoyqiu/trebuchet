@@ -1,19 +1,8 @@
 import { URIComponents } from 'uri-js';
 import Endpoint from '../../../db/endpoint';
+import getPortNumber from '../../getPortNumber';
 import randomid from '../../randomid';
 import { NetworkType, StreamSettingsObject } from '../config/transports';
-
-const getPort = (port?: number | string) => {
-  if (typeof port === 'number') {
-    return port;
-  }
-
-  if (port) {
-    return parseInt(port, 10);
-  }
-
-  return 0;
-};
 
 const getStreamSettings = (uri: URIComponents): StreamSettingsObject => {
   const params = new URLSearchParams(uri.query);
@@ -37,7 +26,7 @@ const getStreamSettings = (uri: URIComponents): StreamSettingsObject => {
 
 const parse = (uri: URIComponents): Endpoint | null => {
   const host = uri.host ?? '';
-  const port = getPort(uri.port);
+  const port = getPortNumber(uri.port);
 
   return {
     id: randomid(),

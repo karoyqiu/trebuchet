@@ -86,8 +86,12 @@ export default function SubscriptionList() {
       </table>
       <SubscriptionDialog
         ref={ref}
-        onClose={() => {
+        onClose={async (values) => {
           ref.current?.close();
+
+          if (values?.id) {
+            await db.subs.update(values.id, values);
+          }
         }}
         sub={sub}
       />

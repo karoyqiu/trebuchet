@@ -92,7 +92,17 @@ export const updateSubscriptions = async () => {
   console.info('Updating subscriptions now');
 
   const subs = await db.subs.toArray();
-  await Promise.allSettled(subs.map(updateSubscription));
+  const results = await Promise.allSettled(subs.map(updateSubscription));
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+
+    if (result.status === 'rejected') {
+      const sub = subs[i];
+      console.error(`Failed to update subscription ${sub.name}`, result.reason);
+      setSubUpdating(sub.id!, false);
+    }
+  }
 
   console.info('Subscriptions updated');
 

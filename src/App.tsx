@@ -1,4 +1,5 @@
 import { appWindow } from '@tauri-apps/api/window';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
@@ -9,8 +10,12 @@ import Alert from './components/Alert';
 import ConnectionState from './components/ConnectionState';
 import LinkMenuItem from './components/LinkMenuItem';
 import Speedometer from './components/Speedometer';
+import db from './db';
 
 function App() {
+  const epCount = useLiveQuery(() => db.endpoints.count(), []);
+  const subCount = useLiveQuery(() => db.subs.count(), []);
+
   // 加载完成之后再显示窗口
   React.useEffect(() => {
     appWindow
@@ -40,10 +45,16 @@ function App() {
               <LinkMenuItem to="/">General</LinkMenuItem>
             </li>
             <li>
-              <LinkMenuItem to="ep">Endpoints</LinkMenuItem>
+              <LinkMenuItem to="ep">
+                Endpoints
+                <div className="badge badge-sm badge-primary font-mono">{epCount}</div>
+              </LinkMenuItem>
             </li>
             <li>
-              <LinkMenuItem to="sub">Subscriptions</LinkMenuItem>
+              <LinkMenuItem to="sub">
+                Subscriptions
+                <div className="badge badge-sm badge-primary font-mono">{subCount}</div>
+              </LinkMenuItem>
             </li>
           </ul>
         </nav>

@@ -9,7 +9,10 @@ use std::{
 };
 
 use error::{map_anything, Result};
-use tauri::App;
+use tauri::{
+  App, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
+  SystemTrayMenuItem, WindowEvent,
+};
 
 /// 下载指定 URL，并返回文本内容。
 #[tauri::command]
@@ -78,8 +81,55 @@ fn copy_resource_if_not_exists(app: &App, filename: &str) -> Result<()> {
   Err(map_anything("App data dir or source file does not exist."))
 }
 
+fn show_main_window(app: &AppHandle) -> Result<()> {
+  if let Some(window) = app.get_window("main") {
+    window.show()?;
+  }
+
+  Ok(())
+}
+
 fn main() {
+  let show = CustomMenuItem::new("show", "Show");
+  let exit = CustomMenuItem::new("exit", "Exit");
+  let tray_menu = SystemTrayMenu::new()
+    .add_item(show)
+    .add_native_item(SystemTrayMenuItem::Separator)
+    .add_item(exit);
+
   tauri::Builder::default()
+    .system_tray(
+      SystemTray::new()
+        .with_menu(tray_menu)
+        .with_tooltip("Trebuchet"),
+    )
+    .on_system_tray_event(|app, event| match event {
+      SystemTrayEvent::DoubleClick {
+        tray_id: _,
+        position: _,
+        size: _,
+        ..
+      } => {
+        show_main_window(app).unwrap();
+      }
+      SystemTrayEvent::MenuItemClick { tray_id: _, id, .. } => match id.as_str() {
+        "show" => {
+          show_main_window(app).unwrap();
+        }
+        "exit" => {
+          app.exit(0);
+        }
+        _ => {}
+      },
+      _ => {}
+    })
+    .on_window_event(|event| match event.event() {
+      WindowEvent::CloseRequested { api, .. } => {
+        event.window().hide().unwrap();
+        api.prevent_close();
+      }
+      _ => {}
+    })
     .setup(|app| {
       // 清空临时目录
       let mut temp = env::temp_dir();

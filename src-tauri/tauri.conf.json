@@ -47,6 +47,10 @@
     "security": {
       "csp": "default-src 'self'"
     },
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
     "windows": [
       {
         "center": true,

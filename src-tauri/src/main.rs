@@ -13,6 +13,7 @@ use tauri::{
   App, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
   SystemTrayMenuItem, WindowEvent,
 };
+use tauri_plugin_log::LogTarget;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -121,6 +122,11 @@ fn main() {
         .emit_all("single-instance", Payload { args: argv, cwd })
         .unwrap();
     }))
+    .plugin(
+      tauri_plugin_log::Builder::default()
+        .targets([LogTarget::LogDir, LogTarget::Stdout])
+        .build(),
+    )
     .system_tray(
       SystemTray::new()
         .with_menu(tray_menu)

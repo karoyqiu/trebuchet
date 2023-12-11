@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { decode } from 'js-base64';
-import { fork } from 'radash';
+import { fork, sift } from 'radash';
+import { error, info, warn } from 'tauri-plugin-log-api';
 import { parse as parseUri } from 'uri-js';
 import db from '../db';
-import Endpoint from '../db/endpoint';
 import { Subscription } from '../db/subscription';
 import { selectFastest } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
@@ -21,7 +21,7 @@ import parseVMess from './xray/protocols/vmess';
 // const SCHEME_VLESS = 'vless://';
 // const SCHEME_VMESS = 'vmess://';
 
-const urlToEndpoint = (s: string) => {
+const urlToEndpoint = async (s: string) => {
   try {
     const uri = parseUri(s, { tolerant: true, iri: true, unicodeSupport: true });
 
@@ -35,11 +35,11 @@ const urlToEndpoint = (s: string) => {
       case 'vless':
         return parseVLESS(uri);
       default:
-        console.warn('Unsupported protocol', s);
+        await warn(`Unsupported protocol: ${s}`);
         break;
     }
   } catch (e) {
-    console.warn('Failed to parse url', e);
+    await warn('Failed to parse url');
   }
 
   return null;
@@ -55,7 +55,7 @@ export const updateSubscription = async (sub: Subscription) => {
     return;
   }
 
-  console.log(`Updating sub ${sub.name}`);
+  await info(`Updating sub ${sub.name}`);
   setSubUpdating(sub.id!, true);
 
   // 下载订阅
@@ -67,22 +67,25 @@ export const updateSubscription = async (sub: Subscription) => {
 
   // 删除原有的
   const removed = await db.endpoints.where('subId').equals(sub.id!).delete();
-  console.log(`${removed} endpoints removed`);
+  await info(`${removed} endpoints removed`);
 
-  const eps: Endpoint[] = [];
+  const eps = sift(
+    await Promise.all(
+      lines.map(async (line) => {
+        const ep = await urlToEndpoint(line.trim());
 
-  for (const line of lines) {
-    const ep = urlToEndpoint(line.trim());
+        if (ep) {
+          ep.subId = sub.id;
+        }
 
-    if (ep) {
-      ep.subId = sub.id;
-      eps.push(ep);
-    }
-  }
+        return ep;
+      })
+    )
+  );
 
   if (eps.length > 0) {
     await db.endpoints.bulkPut(eps);
-    console.log(`${eps.length} endpoints added`);
+    await info(`${eps.length} endpoints added`);
   }
 
   setSubUpdating(sub.id!, false);
@@ -93,7 +96,7 @@ export const updateSubscription = async (sub: Subscription) => {
 
 /** 更新订阅 */
 export const updateSubscriptions = async () => {
-  console.info('Updating subscriptions now');
+  await info('Updating subscriptions now');
 
   const subs = await db.subs.toArray();
 
@@ -111,12 +114,14 @@ export const updateSubscriptions = async () => {
 
     if (result.status === 'rejected') {
       const sub = enabled[i];
-      console.error(`Failed to update subscription ${sub.name}`, result.reason);
+      await error(`Failed to update subscription ${sub.name}`, {
+        keyValues: { reason: `${result.reason}` },
+      });
       setSubUpdating(sub.id!, false);
     }
   }
 
-  console.info('Subscriptions updated');
+  await info('Subscriptions updated');
 
   // 更新后自动选择最快的节点
   await selectFastest();

@@ -703,7 +703,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tauri-apps/api@npm:^1.5.1":
+"@tauri-apps/api@npm:1.5.1, @tauri-apps/api@npm:^1.5.1":
   version: 1.5.1
   resolution: "@tauri-apps/api@npm:1.5.1"
   checksum: d69f8f2cf856aa2bd17bc6ba71dc9c11f683be6e95ad7d3657fd107d994fd96a1f609baac13bd1677cd813770c1d4c818d115c9581b86ecc67adafad0b7bedf0
@@ -4745,6 +4745,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tauri-plugin-log-api@https://github.com/tauri-apps/tauri-plugin-log#v1":
+  version: 0.0.0
+  resolution: "tauri-plugin-log-api@https://github.com/tauri-apps/tauri-plugin-log.git#commit=a428c4c4833027865898ef0f284a69b1978fcd94"
+  dependencies:
+    "@tauri-apps/api": 1.5.1
+  checksum: 0bc2e55c4bfd761fab86312f74ef7a048ebf9e3eeb22720e2617cd8ab421e8a8b645801906c77f555f944a32ba2eb0badef9e14b449b9c3ae84faec516bf4a3e
+  languageName: node
+  linkType: hard
+
 "text-table@npm:^0.2.0":
   version: 0.2.0
   resolution: "text-table@npm:0.2.0"
@@ -4844,6 +4853,7 @@ __metadata:
     react-router-dom: ^6.20.0
     simpler-state: ^1.2.1
     tailwindcss: ^3.3.5
+    tauri-plugin-log-api: "https://github.com/tauri-apps/tauri-plugin-log#v1"
     typescript: ^5.1.6
     uri-js: ^4.4.1
     usehooks-ts: ^2.9.1

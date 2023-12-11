@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { debug, info } from 'tauri-plugin-log-api';
 import { testLatency } from './endpointTest';
 import settings from './settings';
 import { updateSubscriptions } from './subscription';
@@ -9,7 +10,7 @@ const useSubscribe = () => {
 
   // useEffect(() => {
   //   if (subUpdateInterval > 0) {
-  //     console.log(`Updating subscriptions every ${subUpdateInterval} minutes.`);
+  //     log(`Updating subscriptions every ${subUpdateInterval} minutes.`);
   //     const timer = setInterval(updateSubscriptions, subUpdateInterval * 60 * 1000);
   //     return () => clearInterval(timer);
   //   }
@@ -17,12 +18,12 @@ const useSubscribe = () => {
 
   useEffect(() => {
     if (epTestInterval > 0) {
-      console.log(`Testing latency every ${epTestInterval} minutes.`);
+      info(`Testing latency every ${epTestInterval} minutes.`).catch(() => {});
 
       const timer = setInterval(async () => {
         // 测试当前节点的速度
         const latency = await testLatency(socksPort);
-        console.debug(`Checked latency: ${latency}ms`);
+        await debug(`Checked latency: ${latency}ms`);
 
         // 如果当前节点不通了，则更新订阅
         if (latency > 30000) {

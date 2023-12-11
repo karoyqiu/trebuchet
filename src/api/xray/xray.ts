@@ -4,6 +4,7 @@ import { tempdir } from '@tauri-apps/api/os';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
+import { info, warn } from 'tauri-plugin-log-api';
 import Endpoint from '../../db/endpoint';
 import settings from '../settings';
 import ConfigObject from './config';
@@ -14,9 +15,9 @@ import { RuleObject } from './config/routing';
 let subDir = '';
 let dataDir = '';
 
-const redirectLog = (line: string) => {
+const redirectLog = async (line: string) => {
   if (!line.includes('api -> api')) {
-    console.log(`--> ${line}`);
+    await info(`--> ${line}`);
   }
 };
 
@@ -122,7 +123,7 @@ export default class Xray {
    */
   public async start(endpoint: Endpoint, forTest?: boolean) {
     if (this.child) {
-      console.warn('Xray already started.');
+      await warn('Xray already started.');
       return;
     }
 
@@ -294,8 +295,7 @@ export default class Xray {
 
     this.child = await cmd.spawn();
     await waitForStarted;
-
-    console.info(`Xray started with PID ${this.child.pid}`);
+    await info(`Xray started with PID ${this.child.pid}`);
   }
 
   /** 停止 xray。 */

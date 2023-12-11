@@ -1,16 +1,19 @@
 import { invoke } from '@tauri-apps/api/tauri';
+import { debug, error } from 'tauri-plugin-log-api';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import Xray from './xray/xray';
 
 export const testLatency = async (proxyPort: number) => {
   try {
-    console.debug(`Testing on port ${proxyPort}`);
+    await debug(`Testing on port ${proxyPort}`);
     const latency = await invoke<number>('test_latency', { proxyPort });
     return latency;
   } catch (e) {
     // 测试失败
-    console.error(`Test error on port ${proxyPort}`, e);
+    // @ts-expect-error: 未知就未知吧
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    await error(`Test error on port ${proxyPort}`, { keyValues: { msg: e.toString() } });
     return 999999;
   }
 };

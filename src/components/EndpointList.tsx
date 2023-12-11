@@ -22,7 +22,7 @@ export default function EndpointList() {
           >
             <td className="w-full">
               <p className="text-lg font-bold">{item.name}</p>
-              <p className="text-sm opacity-50">{`${item.host}:${item.port}`}</p>
+              <p className="text-sm opacity-50 truncate max-w-xl">{`${item.host}:${item.port}`}</p>
             </td>
             <td>
               <div className="badge badge-sm">{item.outbound.protocol}</div>

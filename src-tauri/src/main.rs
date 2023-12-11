@@ -8,7 +8,7 @@ use std::{
   time::{Duration, Instant},
 };
 
-use error::{map_anything, Result};
+use error::{map_any_error, map_anything, Result};
 use tauri::{
   App, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
   SystemTrayMenuItem, WindowEvent,
@@ -19,6 +19,18 @@ use tauri::{
 async fn download(url: &str) -> Result<String> {
   let body = reqwest::get(url).await?.text().await?;
   Ok(body)
+}
+
+/// 下载资源文件，并保存到应用数据目录。
+#[tauri::command]
+async fn download_resource(app: AppHandle, url: &str, filename: &str) -> Result<()> {
+  if let Some(mut dir) = app.path_resolver().app_data_dir() {
+    dir.push(filename);
+    let body = reqwest::get(url).await?.bytes().await?;
+    tokio::fs::write(dir, body).await.map_err(map_any_error)
+  } else {
+    Err(map_anything("No app data dir"))
+  }
 }
 
 /// 获取可用于侦听的 TCP 端口。
@@ -154,6 +166,7 @@ fn main() {
     })
     .invoke_handler(tauri::generate_handler![
       download,
+      download_resource,
       get_available_port,
       test_latency
     ])

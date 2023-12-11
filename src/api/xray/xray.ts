@@ -168,27 +168,32 @@ export default class Xray {
         {
           type: 'field',
           outboundTag: 'block',
-          domain: ['activity.meteor.com'],
+          domain: ['activity.meteor.com', 'geosite:category-ads-all'],
         },
         {
           type: 'field',
           outboundTag: 'direct',
-          domain: ['domain:cypress.io'],
-        },
-        {
-          type: 'field',
-          outboundTag: 'block',
-          domain: ['geosite:category-ads-all'],
+          domain: [
+            'domain:cypress.io',
+            'geosite:cn',
+            'geosite:private',
+            'geosite:apple-cn',
+            'geosite:google-cn',
+            'geosite:tld-cn',
+            'geosite:category-games@cn',
+          ],
         },
         {
           type: 'field',
           outboundTag: 'direct',
-          domain: ['geosite:cn'],
-        },
-        {
-          type: 'field',
-          outboundTag: 'direct',
-          ip: ['geoip:private', 'geoip:cn'],
+          ip: [
+            '223.5.5.5/32',
+            '119.29.29.29/32',
+            '180.76.76.76/32',
+            '114.114.114.114/32',
+            'geoip:private',
+            'geoip:cn',
+          ],
         }
       );
     }
@@ -206,7 +211,31 @@ export default class Xray {
         services: ['StatsService'],
       },
       dns: {
-        servers: ['8.8.8.8', 'localhost'],
+        hosts: {
+          'dns.google': '8.8.8.8',
+          'dns.pub': '119.29.29.29',
+          'dns.alidns.com': '223.5.5.5',
+          'geosite:category-ads-all': '127.0.0.1',
+        },
+        servers: [
+          {
+            address: 'https://1.1.1.1/dns-query',
+            domains: ['geosite:geolocation-!cn'],
+            expectIPs: ['geoip:!cn'],
+          },
+          '8.8.8.8',
+          {
+            address: '223.5.5.5',
+            port: 53,
+            domains: ['geosite:cn', 'geosite:category-games@cn'],
+            expectIPs: ['geoip:cn'],
+            skipFallback: true,
+          },
+          {
+            address: 'localhost',
+            skipFallback: true,
+          },
+        ],
       },
       log: {
         access: '',

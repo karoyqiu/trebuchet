@@ -5,7 +5,7 @@ interface ServerObject {
   /** DNS 服务器端口，如 `53`。此项缺省时默认为 `53`。 */
   port?: number;
   /** 一个域名列表，此列表包含的域名，将优先使用此服务器进行查询。域名格式和 {@link RuleObject|路由配置} 中相同。 */
-  domains: string[];
+  domains?: string[];
   /**
    * 一个 IP 范围列表，格式和 {@link RuleObject|路由配置} 中相同。
    *

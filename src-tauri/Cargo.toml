@@ -32,6 +32,7 @@ reqwest = { version = "0.11.18", features = [
 ] }
 anyhow = "1.0.75"
 thiserror = "1.0.47"
+tokio = { version = "1.32", default-features = false, features = ["fs"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

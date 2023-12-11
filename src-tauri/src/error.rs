@@ -23,12 +23,12 @@ impl serde::Serialize for Error {
   }
 }
 
-// pub fn map_any_error<E>(value: E) -> Error
-// where
-//   E: std::error::Error + Send + Sync + 'static,
-// {
-//   Error::Anyhow(anyhow::anyhow!(value))
-// }
+pub fn map_any_error<E>(value: E) -> Error
+where
+  E: std::error::Error + Send + Sync + 'static,
+{
+  Error::Anyhow(anyhow::anyhow!(value))
+}
 
 pub fn map_anything<E>(value: E) -> Error
 where

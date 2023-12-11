@@ -14,6 +14,12 @@ use tauri::{
   SystemTrayMenuItem, WindowEvent,
 };
 
+#[derive(Clone, serde::Serialize)]
+struct Payload {
+  args: Vec<String>,
+  cwd: String,
+}
+
 /// 下载指定 URL，并返回文本内容。
 #[tauri::command]
 async fn download(url: &str) -> Result<String> {
@@ -110,6 +116,11 @@ fn main() {
     .add_item(exit);
 
   tauri::Builder::default()
+    .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+      app
+        .emit_all("single-instance", Payload { args: argv, cwd })
+        .unwrap();
+    }))
     .system_tray(
       SystemTray::new()
         .with_menu(tray_menu)

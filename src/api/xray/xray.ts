@@ -281,7 +281,20 @@ export default class Xray {
     cmd.stdout.on('data', redirectLog);
     cmd.stderr.on('data', redirectLog);
 
+    const waitForStarted = new Promise<void>((resolve) => {
+      const watchForStarted = (line: string) => {
+        if (line.includes('Xray') && line.includes('started')) {
+          cmd.stdout.off('data', watchForStarted);
+          resolve();
+        }
+      };
+
+      cmd.stdout.on('data', watchForStarted);
+    });
+
     this.child = await cmd.spawn();
+    await waitForStarted;
+
     console.info(`Xray started with PID ${this.child.pid}`);
   }
 

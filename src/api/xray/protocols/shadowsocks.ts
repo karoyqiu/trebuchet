@@ -14,7 +14,7 @@ const parse = (uri: URIComponents): Endpoint | null => {
 
   return {
     id: randomid(),
-    name: fragment,
+    name: decodeURIComponent(fragment),
     host,
     port,
     outbound: {

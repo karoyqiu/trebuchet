@@ -9,6 +9,7 @@ import { testLatencies } from './endpointTest';
 import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
 import parseShadowsocks from './xray/protocols/shadowsocks';
 import parseTrojan from './xray/protocols/trojan';
+import parseVLESS from './xray/protocols/vless';
 import parseVMess from './xray/protocols/vmess';
 
 // const SCHEME_HTTP = 'http://';
@@ -30,6 +31,8 @@ const urlToEndpoint = (s: string) => {
         return parseTrojan(uri);
       case 'ss':
         return parseShadowsocks(uri);
+      case 'vless':
+        return parseVLESS(uri);
       default:
         console.warn('Unsupported protocol', s);
         break;

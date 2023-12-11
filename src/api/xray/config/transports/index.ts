@@ -176,7 +176,7 @@ interface SockoptObject {
   interface?: string;
 }
 
-export type NetworkType = 'tcp' | 'kcp' | 'ws' | 'http' | 'domainsocket' | 'quic' | 'grpc';
+export type NetworkType = 'tcp' | 'kcp' | 'ws' | 'http' | 'h2' | 'domainsocket' | 'quic' | 'grpc';
 
 export type StreamSettingsObject = TransportObject &
   (InsecureTransportObject | TLSTransportObject | RealityTransportObject) & {

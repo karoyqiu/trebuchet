@@ -1,4 +1,4 @@
-import 'material-symbols/outlined.css';
+/// <reference types="vite-plugin-svgr/client" />
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';

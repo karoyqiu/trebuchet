@@ -1,7 +1,7 @@
+import NetworkCheckIcon from '@material-symbols/svg-400/outlined/network_check.svg?react';
 import { selectFastest } from '../api/currentEndpoint';
 import { testLatencies } from '../api/endpointTest';
 import EndpointList from '../components/EndpointList';
-import MaterialSymbol from '../components/MaterialSymbol';
 import db from '../db';
 
 export default function EndpointPage() {
@@ -16,7 +16,7 @@ export default function EndpointPage() {
             await selectFastest();
           }}
         >
-          <MaterialSymbol symbol="network_check" />
+          <NetworkCheckIcon />
           Test speed
         </button>
       </div>

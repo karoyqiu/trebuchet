@@ -1,10 +1,12 @@
+import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg?react';
+import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react';
+import RefreshIcon from '@material-symbols/svg-400/outlined/refresh.svg?react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import React from 'react';
 import { updateSubscription } from '../api/subscription';
 import useSubscriptionUpdating from '../api/useSubscriptionUpdating';
 import db from '../db';
 import { Subscription } from '../db/subscription';
-import MaterialSymbol from './MaterialSymbol';
 import SubscriptionDialog from './SubscriptionDialog';
 
 const enableSub = (id: number, enabled: boolean) => db.subs.update(id, { disabled: !enabled });
@@ -44,17 +46,17 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
               disabled={isUpdating}
               onClick={() => updateSubscription(sub)}
             >
-              <MaterialSymbol symbol="refresh" className={isUpdating ? 'animate-spin' : ''} />
+              <RefreshIcon className={isUpdating ? 'animate-spin' : ''} />
             </button>
           </div>
           <div className="tooltip tooltip-bottom" data-tip="Edit">
             <button className="btn join-item" onClick={() => onEdit(sub)}>
-              <MaterialSymbol symbol="edit" />
+              <EditIcon />
             </button>
           </div>
           <div className="tooltip tooltip-bottom" data-tip="Remove">
             <button className="btn btn-error join-item">
-              <MaterialSymbol symbol="delete" />
+              <DeleteIcon />
             </button>
           </div>
         </div>

@@ -109,6 +109,12 @@ fn main() {
         position: _,
         size: _,
         ..
+      }
+      | SystemTrayEvent::LeftClick {
+        tray_id: _,
+        position: _,
+        size: _,
+        ..
       } => {
         show_main_window(app).unwrap();
       }

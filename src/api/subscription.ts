@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { decode } from 'js-base64';
+import { fork } from 'radash';
 import { parse as parseUri } from 'uri-js';
 import db from '../db';
 import Endpoint from '../db/endpoint';
@@ -95,13 +96,21 @@ export const updateSubscriptions = async () => {
   console.info('Updating subscriptions now');
 
   const subs = await db.subs.toArray();
-  const results = await Promise.allSettled(subs.map(updateSubscription));
+
+  // 按启用/禁用分组，删除所有禁用的节点
+  const [enabled, disabled] = fork(subs, (sub) => !sub.disabled);
+  await db.endpoints
+    .where('subId')
+    .anyOf(disabled.map((sub) => sub.id!))
+    .delete();
+
+  const results = await Promise.allSettled(enabled.map(updateSubscription));
 
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
 
     if (result.status === 'rejected') {
-      const sub = subs[i];
+      const sub = enabled[i];
       console.error(`Failed to update subscription ${sub.name}`, result.reason);
       setSubUpdating(sub.id!, false);
     }

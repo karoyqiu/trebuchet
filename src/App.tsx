@@ -9,6 +9,7 @@ import useStats from './api/useStats';
 import useSubscribe from './api/useSubscribe';
 import Alert from './components/Alert';
 import ConnectionState from './components/ConnectionState';
+import InputBoxProvider from './components/InputBoxProvider';
 import LinkMenuItem from './components/LinkMenuItem';
 import Speedometer from './components/Speedometer';
 import db from './db';
@@ -83,7 +84,9 @@ function App() {
         </div>
       </div>
       <div className="flex-1 max-h-full">
-        <Outlet />
+        <InputBoxProvider>
+          <Outlet />
+        </InputBoxProvider>
       </div>
     </div>
   );

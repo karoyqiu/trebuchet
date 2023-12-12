@@ -18,8 +18,8 @@ export const isCurrent = (ep: Endpoint) => {
  * 设置当前节点。
  * @param ep 节点
  */
-export const setCurrent = async (ep: Endpoint) => {
-  if (!isCurrent(ep)) {
+export const setCurrent = async (ep: Endpoint, force?: boolean) => {
+  if (force || !isCurrent(ep)) {
     current.set(ep);
     await window.xray.stop();
     await window.xray.start(ep);
@@ -29,10 +29,10 @@ export const setCurrent = async (ep: Endpoint) => {
 /**
  * 选择最快的节点。
  */
-export const selectFastest = async () => {
+export const selectFastest = async (force?: boolean) => {
   const all = await db.endpoints.toCollection().sortBy('latency');
 
   if (all.length > 0) {
-    await setCurrent(all[0]);
+    await setCurrent(all[0], force);
   }
 };

@@ -23,4 +23,9 @@ const defaultSettings: Settings = {
 
 const settings = entity(defaultSettings, [persistence('settings')]);
 
+export const useSettings = () => settings.use();
+
+const changeSettings = (value: Settings, change: Partial<Settings>) => ({ ...value, ...change });
+export const updateSettings = (change: Partial<Settings>) => settings.set(changeSettings, change);
+
 export default settings;

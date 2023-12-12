@@ -40,7 +40,7 @@ export default function InputBoxProvider(props: { children?: React.ReactNode }) 
     <InputBoxContext.Provider value={providerValue}>
       {children}
       <dialog ref={ref} className="modal">
-        <div className="modal-box">
+        <form className="modal-box" method="dialog" autoComplete="off">
           <p className="py-4">{content.label}</p>
           <input
             type="text"
@@ -58,19 +58,17 @@ export default function InputBoxProvider(props: { children?: React.ReactNode }) 
             }}
           />
           <div className="modal-action">
-            <form className="flex gap-2" method="dialog">
-              <button className="btn" onClick={() => content.onClose && content.onClose()}>
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => content.onClose && content.onClose(content.value)}
-              >
-                OK
-              </button>
-            </form>
+            <button className="btn" onClick={() => content.onClose && content.onClose()}>
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => content.onClose && content.onClose(content.value)}
+            >
+              OK
+            </button>
           </div>
-        </div>
+        </form>
       </dialog>
     </InputBoxContext.Provider>
   );

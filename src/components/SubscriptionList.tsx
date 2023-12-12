@@ -42,7 +42,7 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
         <div className="join">
           <div className="tooltip tooltip-bottom" data-tip={isUpdating ? 'Updating...' : 'Update'}>
             <button
-              className="btn join-item"
+              className="btn btn-ghost btn-square join-item"
               disabled={isUpdating}
               onClick={() => updateSubscription(sub)}
             >
@@ -50,12 +50,12 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
             </button>
           </div>
           <div className="tooltip tooltip-bottom" data-tip="Edit">
-            <button className="btn join-item" onClick={() => onEdit(sub)}>
+            <button className="btn btn-ghost btn-square join-item" onClick={() => onEdit(sub)}>
               <EditIcon />
             </button>
           </div>
           <div className="tooltip tooltip-bottom" data-tip="Remove">
-            <button className="btn btn-error join-item">
+            <button className="btn btn-error btn-square join-item">
               <DeleteIcon />
             </button>
           </div>

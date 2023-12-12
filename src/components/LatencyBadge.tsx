@@ -38,5 +38,5 @@ export default function LatencyBadge(props: LatencyBadgeProps) {
     return ['badge-ghost', 'Timeout'];
   }, [latency]);
 
-  return <div className={clsx('badge badge-sm', color)}>{text}</div>;
+  return <div className={clsx('badge badge-sm font-mono', color)}>{text}</div>;
 }

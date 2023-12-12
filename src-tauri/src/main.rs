@@ -14,7 +14,6 @@ use tauri::{
   SystemTrayMenuItem, WindowEvent,
 };
 use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_log::LogTarget;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -61,13 +60,14 @@ async fn test_latency(proxy_port: u16) -> Result<i32> {
 
   let now = Instant::now();
   let status = client
-    .head("https://www.google.com/")
+    .get("https://www.google.com/generate_204")
     .send()
     .await?
     .status();
+  let elapsed = now.elapsed().as_millis() as i32;
 
   if status.is_success() {
-    Ok(now.elapsed().as_millis() as i32)
+    Ok(elapsed)
   } else {
     // 999999 表示超时或失败
     Ok(999999)
@@ -125,7 +125,7 @@ fn main() {
     }))
     .plugin(
       tauri_plugin_log::Builder::default()
-        .targets([LogTarget::LogDir, LogTarget::Stdout])
+        .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
         .build(),
     )
     .plugin(tauri_plugin_autostart::init(

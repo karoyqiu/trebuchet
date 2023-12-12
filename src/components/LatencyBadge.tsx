@@ -23,11 +23,11 @@ export default function LatencyBadge(props: LatencyBadgeProps) {
 
     const text = ms.format(latency);
 
-    if (latency <= 200) {
+    if (latency <= 1000) {
       return ['badge-success', text];
     }
 
-    if (latency <= 1000) {
+    if (latency <= 3000) {
       return ['badge-warning', text];
     }
 

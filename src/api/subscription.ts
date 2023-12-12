@@ -5,8 +5,6 @@ import { error, info, warn } from 'tauri-plugin-log-api';
 import { parse as parseUri } from 'uri-js';
 import db from '../db';
 import { Subscription } from '../db/subscription';
-import { selectFastest } from './currentEndpoint';
-import { testLatencies } from './endpointTest';
 import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
 import parseShadowsocks from './xray/protocols/shadowsocks';
 import parseTrojan from './xray/protocols/trojan';
@@ -91,7 +89,7 @@ export const updateSubscription = async (sub: Subscription) => {
   setSubUpdating(sub.id!, false);
 
   // 更新后自动测试延迟
-  await testLatencies(eps);
+  //await testLatencies(eps);
 };
 
 /** 更新订阅 */
@@ -124,5 +122,5 @@ export const updateSubscriptions = async () => {
   await info('Subscriptions updated');
 
   // 更新后自动选择最快的节点
-  await selectFastest();
+  //await selectFastest();
 };

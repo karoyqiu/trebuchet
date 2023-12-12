@@ -1,6 +1,7 @@
 import { getVersion } from '@tauri-apps/api/app';
 import clsx from 'clsx';
 import React from 'react';
+import { disable, enable, isEnabled } from 'tauri-plugin-autostart-api';
 import settings from '../api/settings';
 
 const min = new Intl.NumberFormat(navigator.language, {
@@ -10,11 +11,15 @@ const min = new Intl.NumberFormat(navigator.language, {
 
 export default function GeneralPage() {
   const [version, setVersion] = React.useState('');
+  const [autoStart, setAutoStart] = React.useState(false);
   const us = settings.use();
 
   React.useEffect(() => {
     getVersion()
       .then(setVersion)
+      .catch(() => {});
+    isEnabled()
+      .then(setAutoStart)
       .catch(() => {});
   }, []);
 
@@ -36,6 +41,24 @@ export default function GeneralPage() {
       <span className="font-mono text-end">{min.format(us.subUpdateInterval)}</span>
       <span>Latency test interval</span>
       <span className="font-mono text-end">{min.format(us.epTestInterval)}</span>
+      <span>Autostart</span>
+      <label className="cursor-pointer label flex gap-2">
+        <span>{autoStart ? 'Yes' : 'No'}</span>
+        <input
+          type="checkbox"
+          className="toggle toggle-success"
+          checked={autoStart}
+          onChange={async (event) => {
+            setAutoStart(event.target.checked);
+
+            if (event.target.checked) {
+              await enable();
+            } else {
+              await disable();
+            }
+          }}
+        />
+      </label>
     </div>
   );
 }

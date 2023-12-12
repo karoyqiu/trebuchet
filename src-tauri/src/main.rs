@@ -13,6 +13,7 @@ use tauri::{
   App, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
   SystemTrayMenuItem, WindowEvent,
 };
+use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
 
 #[derive(Clone, serde::Serialize)]
@@ -127,6 +128,10 @@ fn main() {
         .targets([LogTarget::LogDir, LogTarget::Stdout])
         .build(),
     )
+    .plugin(tauri_plugin_autostart::init(
+      MacosLauncher::LaunchAgent,
+      None,
+    ))
     .system_tray(
       SystemTray::new()
         .with_menu(tray_menu)

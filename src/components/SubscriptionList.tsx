@@ -36,7 +36,7 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
       </td>
       <td className="w-full">
         <p className="text-lg font-bold">{sub.name}</p>
-        <p className="text-sm opacity-50">{sub.url}</p>
+        <p className="text-sm opacity-50 truncate max-w-xl">{sub.url}</p>
       </td>
       <td>
         <div className="join">

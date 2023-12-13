@@ -3,7 +3,7 @@
 
 mod error;
 use std::{
-  env, fs,
+  fs,
   net::TcpListener,
   time::{Duration, Instant},
 };
@@ -50,10 +50,10 @@ fn get_available_port() -> Result<u16> {
 
 /// 测试指定代理的延迟，结果为毫秒。
 #[tauri::command]
-async fn test_latency(proxy_port: u16) -> Result<i32> {
+async fn test_latency(proxy_port: u16, timeout: Option<u64>) -> Result<i32> {
   let proxy_url = format!("socks5://127.0.0.1:{}", proxy_port);
   let client = reqwest::Client::builder()
-    .timeout(Duration::new(30, 0))
+    .timeout(Duration::new(timeout.unwrap_or(10), 0))
     .proxy(reqwest::Proxy::all(proxy_url)?)
     .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0")
     .build()?;
@@ -171,14 +171,17 @@ fn main() {
       _ => {}
     })
     .setup(|app| {
-      // 清空临时目录
-      let mut temp = env::temp_dir();
-      temp.push(&app.package_info().name);
-      let _ = fs::remove_dir_all(&temp);
-      fs::create_dir_all(&temp)?;
+      let resolver = app.path_resolver();
+
+      // 清空配置目录
+      if let Some(mut config_dir) = resolver.app_config_dir() {
+        config_dir.push("config");
+        let _ = fs::remove_dir_all(&config_dir);
+        fs::create_dir_all(&config_dir)?;
+      }
 
       // 创建数据目录，并复制文件
-      if let Some(data_dir) = app.path_resolver().app_data_dir() {
+      if let Some(data_dir) = resolver.app_data_dir() {
         fs::create_dir_all(&data_dir)?;
         copy_resource_if_not_exists(app, "geoip.dat")?;
         copy_resource_if_not_exists(app, "geosite.dat")?;

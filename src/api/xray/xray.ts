@@ -1,7 +1,5 @@
-import { getName } from '@tauri-apps/api/app';
 import { BaseDirectory, removeFile, writeTextFile } from '@tauri-apps/api/fs';
-import { tempdir } from '@tauri-apps/api/os';
-import { appDataDir, join } from '@tauri-apps/api/path';
+import { appConfigDir, appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
 import { info, warn } from 'tauri-plugin-log-api';
@@ -12,7 +10,7 @@ import InboundObject from './config/inbound';
 import OutboundObject from './config/outbound';
 import { RuleObject } from './config/routing';
 
-let subDir = '';
+let configDir = '';
 let dataDir = '';
 
 const redirectLog = async (line: string) => {
@@ -258,22 +256,16 @@ export default class Xray {
       outbounds,
     };
 
-    if (!subDir) {
-      [subDir, dataDir] = await Promise.all([getName(), appDataDir()]);
+    if (!configDir) {
+      [configDir, dataDir] = await Promise.all([appConfigDir(), appDataDir()]);
+      configDir = await join(configDir, 'config');
     }
 
-    const filename = `${endpoint.id}.json`;
-    this.filename = `${subDir}/${filename}`;
-    const temp = await tempdir();
-    const [fullName] = await Promise.all([
-      join(temp, this.filename),
-      writeTextFile(this.filename, JSON.stringify(config, undefined, 2), {
-        dir: BaseDirectory.Temp,
-      }),
-    ]);
+    this.filename = await join(configDir, `${endpoint.id}.json`);
+    await writeTextFile(this.filename, JSON.stringify(config, undefined, 2));
 
     // 启动 xray
-    const cmd = Command.sidecar('xray/xray', ['-config', fullName], {
+    const cmd = Command.sidecar('xray/xray', ['-config', this.filename], {
       env: {
         XRAY_LOCATION_ASSET: dataDir,
       },

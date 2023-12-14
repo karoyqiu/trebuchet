@@ -17,7 +17,7 @@ const mbps = new Intl.NumberFormat(navigator.language, {
   maximumFractionDigits: 1,
 });
 
-const formatSpeed = (bytesPerSecond: number) => {
+export const formatSpeed = (bytesPerSecond: number) => {
   const threshold = 1024;
 
   if (bytesPerSecond < threshold) {
@@ -45,9 +45,9 @@ export default function Speedometer(props: SpeedometerProps) {
 
   return (
     <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
-      <span className="text-green-500">↑</span>
+      <span className="text-error">↑</span>
       <span className="font-mono text-end">{formatSpeed(upload)}</span>
-      <span className="text-red-500">↓</span>
+      <span className="text-success">↓</span>
       <span className="font-mono text-end">{formatSpeed(download)}</span>
     </div>
   );

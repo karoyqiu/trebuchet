@@ -5,6 +5,7 @@ import { disable, enable, isEnabled } from 'tauri-plugin-autostart-api';
 import { selectFastest } from '../api/currentEndpoint';
 import { updateSettings, useSettings } from '../api/settings';
 import useInputBox from '../api/useInputBox';
+import FlowChart from '../components/FlowChart';
 
 const min = new Intl.NumberFormat(navigator.language, {
   style: 'unit',
@@ -27,7 +28,7 @@ export default function GeneralPage() {
   }, []);
 
   return (
-    <div className="grid grid-cols-[1fr_auto_auto] items-center p-12 gap-4 text-lg">
+    <div className="grid grid-cols-[1fr_auto_auto] items-center p-12 gap-4 h-full text-lg">
       <h1 className="col-span-3 text-6xl text-center mb-12">
         Trebuchet <span className="text-base font-mono">{`v${version}`}</span>
       </h1>
@@ -70,7 +71,7 @@ export default function GeneralPage() {
         <EditIcon />
       </button>
       <span>Allow LAN</span>
-      <label className="col-span-2 cursor-pointer label flex gap-2 justify-end">
+      <label className="col-span-2 cursor-pointer label flex gap-2 justify-end p-0">
         <span>{settings.allowLan ? 'Yes' : 'No'}</span>
         <input
           type="checkbox"
@@ -119,7 +120,7 @@ export default function GeneralPage() {
         <EditIcon />
       </button>
       <span>Autostart</span>
-      <label className="col-span-2 cursor-pointer label flex gap-2 justify-end">
+      <label className="col-span-2 cursor-pointer label flex gap-2 justify-end p-0">
         <span>{autoStart ? 'Yes' : 'No'}</span>
         <input
           type="checkbox"
@@ -136,6 +137,9 @@ export default function GeneralPage() {
           }}
         />
       </label>
+      <div className="col-span-3 h-full">
+        <FlowChart />
+      </div>
     </div>
   );
 }

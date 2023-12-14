@@ -1,5 +1,7 @@
 import { Command } from '@tauri-apps/api/shell';
 import React from 'react';
+import db from '../db';
+import FlowLog from '../db/flowLog';
 
 type Stats = {
   totalDownload: number;
@@ -82,11 +84,27 @@ const useStats = () => {
   React.useEffect(() => {
     const timer = setInterval(async () => {
       const s = await queryStats();
-      setStats((old) => ({
-        ...s,
-        deltaDownload: Math.max(0, s.totalDownload - old.totalDownload),
-        deltaUpload: Math.max(0, s.totalUpload - old.totalUpload),
-      }));
+      setStats((old) => {
+        const flow: FlowLog = {
+          ts: Date.now(),
+          download: Math.max(0, s.totalDownload - old.totalDownload),
+          upload: Math.max(0, s.totalUpload - old.totalUpload),
+        };
+
+        // 保留 10 分钟内的数据
+        db.flowLogs
+          .where('ts')
+          .below(flow.ts - 10 * 60 * 1000)
+          .delete()
+          .catch(() => {});
+        db.flowLogs.add(flow).catch(() => {});
+
+        return {
+          ...s,
+          deltaDownload: flow.download,
+          deltaUpload: flow.upload,
+        };
+      });
     }, 1000);
 
     return () => clearInterval(timer);

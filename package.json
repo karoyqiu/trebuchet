@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@material-symbols/svg-400": "^0.14.2",
+    "@robloche/chartjs-plugin-streaming": "^3.1.0",
     "@tauri-apps/api": "^1.5.1",
     "chart.js": "^4.4.1",
+    "chartjs-adapter-dayjs-4": "^1.0.4",
     "clsx": "^2.0.0",
+    "dayjs": "^1.11.10",
     "dexie": "^3.2.4",
     "dexie-react-hooks": "^1.1.7",
     "formik": "^2.4.5",

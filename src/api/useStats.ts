@@ -91,10 +91,10 @@ const useStats = () => {
           upload: Math.max(0, s.totalUpload - old.totalUpload),
         };
 
-        // 保留 10 分钟内的数据
+        // 保留 2 分钟内的数据
         db.flowLogs
           .where('ts')
-          .below(flow.ts - 10 * 60 * 1000)
+          .below(flow.ts - 2 * 60 * 1000)
           .delete()
           .catch(() => {});
         db.flowLogs.add(flow).catch(() => {});

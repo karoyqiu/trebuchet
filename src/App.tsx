@@ -1,3 +1,4 @@
+import { getMatches } from '@tauri-apps/api/cli';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -34,8 +35,12 @@ function App() {
 
   // 加载完成之后再显示窗口
   React.useEffect(() => {
-    appWindow
-      .show()
+    getMatches()
+      .then((matches) => {
+        if (!matches.args.autostart || !matches.args.autostart.value) {
+          return appWindow.show();
+        }
+      })
       .then(updateSubscriptions)
       .catch(() => {});
 

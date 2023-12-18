@@ -30,6 +30,7 @@ export const testLatencies = async (eps: Endpoint[]) => {
   for (const ep of eps) {
     const xray = new Xray();
     await xray.start(ep, true);
+    await debug(`Xray started on ${xray.apiPort} for endpoint ${ep.name}`);
     xrays.push(xray);
   }
 
@@ -44,4 +45,6 @@ export const testLatencies = async (eps: Endpoint[]) => {
       ]);
     })
   );
+
+  await Promise.all(xrays.map((xray) => xray.stop()));
 };

@@ -117,12 +117,17 @@ fn main() {
     .add_native_item(SystemTrayMenuItem::Separator)
     .add_item(exit);
 
-  tauri::Builder::default()
-    .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+  let mut builder = tauri::Builder::default();
+
+  if cfg!(not(debug_assertions)) {
+    builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
       app
         .emit_all("single-instance", Payload { args: argv, cwd })
         .unwrap();
-    }))
+    }));
+  }
+
+  builder
     .plugin(
       tauri_plugin_log::Builder::default()
         .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
@@ -130,7 +135,7 @@ fn main() {
     )
     .plugin(tauri_plugin_autostart::init(
       MacosLauncher::LaunchAgent,
-      None,
+      Some(vec!["-a"]),
     ))
     .system_tray(
       SystemTray::new()

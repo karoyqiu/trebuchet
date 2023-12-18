@@ -30,6 +30,14 @@
         "show": true
       }
     },
+    "cli": {
+      "args": [
+        {
+          "name": "autostart",
+          "short": "a"
+        }
+      ]
+    },
     "bundle": {
       "active": false,
       "targets": "all",

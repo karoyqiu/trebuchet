@@ -1,8 +1,8 @@
 [package]
 name = "trebuchet"
-version = "0.0.0"
+version = "1.0.0"
 description = "Project Trebuchet"
-authors = ["you"]
+authors = ["karoyqiu@gmail.com"]
 license = ""
 repository = ""
 edition = "2021"
@@ -13,9 +13,30 @@ edition = "2021"
 tauri-build = { version = "1.4", features = [] }
 
 [dependencies]
-tauri = { version = "1.4", features = [] }
+tauri = { version = "1.4", features = [
+  "cli",
+  "fs-remove-file",
+  "fs-write-file",
+  "os-all",
+  "path-all",
+  "shell-sidecar",
+  "system-tray",
+  "window-show",
+] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+reqwest = { version = "0.11.18", features = [
+  "deflate",
+  "brotli",
+  "gzip",
+  "socks",
+] }
+anyhow = "1.0.75"
+thiserror = "1.0.47"
+tokio = { version = "1.32", default-features = false, features = ["fs"] }
+tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

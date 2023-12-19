@@ -7,11 +7,36 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "trebuchet",
-    "version": "../package.json"
+    "productName": "trebuchet"
   },
   "tauri": {
     "allowlist": {
+      "fs": {
+        "scope": ["$APPCONFIG/config/*"],
+        "writeFile": true,
+        "removeFile": true
+      },
+      "os": {
+        "all": true
+      },
+      "path": {
+        "all": true
+      },
+      "shell": {
+        "sidecar": true,
+        "scope": [{ "name": "xray/xray", "sidecar": true, "args": true }]
+      },
+      "window": {
+        "show": true
+      }
+    },
+    "cli": {
+      "args": [
+        {
+          "name": "autostart",
+          "short": "a"
+        }
+      ]
     },
     "bundle": {
       "active": false,
@@ -23,18 +48,23 @@
         "icons/128x128@2x.png",
         "icons/icon.icns",
         "icons/icon.ico"
-      ]
+      ],
+      "externalBin": ["xray/xray"],
+      "resources": ["xray/LICENSE", "xray/geoip.dat", "xray/geosite.dat", "xray/README.md"]
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'"
+    },
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
     },
     "windows": [
       {
         "center": true,
         "fileDropEnabled": false,
-        "fullscreen": false,
-        "resizable": true,
         "title": "Trebuchet",
+        "visible": false,
         "width": 1200,
         "height": 720
       }

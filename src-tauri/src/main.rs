@@ -111,10 +111,12 @@ fn show_main_window(app: &AppHandle) -> Result<()> {
 
 fn main() {
   let show = CustomMenuItem::new("show", "Show");
+  let restart = CustomMenuItem::new("restart", "Restart");
   let exit = CustomMenuItem::new("exit", "Exit");
   let tray_menu = SystemTrayMenu::new()
     .add_item(show)
     .add_native_item(SystemTrayMenuItem::Separator)
+    .add_item(restart)
     .add_item(exit);
 
   let mut builder = tauri::Builder::default();
@@ -160,6 +162,9 @@ fn main() {
       SystemTrayEvent::MenuItemClick { tray_id: _, id, .. } => match id.as_str() {
         "show" => {
           show_main_window(app).unwrap();
+        }
+        "restart" => {
+          app.restart();
         }
         "exit" => {
           app.exit(0);

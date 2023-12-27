@@ -110,9 +110,7 @@ export const updateSubscriptions = async () => {
 
     if (result.status === 'rejected') {
       const sub = enabled[i];
-      await error(`Failed to update subscription ${sub.name}`, {
-        keyValues: { reason: `${result.reason}` },
-      });
+      await error(`Failed to update subscription ${sub.name}: ${result.reason}`);
       setSubUpdating(sub.id!, false);
     }
   }

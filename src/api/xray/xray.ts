@@ -287,13 +287,14 @@ export default class Xray {
 
     this.child = await cmd.spawn();
     await waitForStarted;
-    await info(`Xray started with PID ${this.child.pid}`);
+    await info(`Xray started with PID ${this.child.pid} on port ${this.aport}`);
   }
 
   /** 停止 xray。 */
   public async stop() {
     if (this.child) {
       await Promise.allSettled([
+        info(`Stopping on port ${this.aport}`),
         this.child.kill(),
         removeFile(this.filename, { dir: BaseDirectory.Temp }),
       ]);

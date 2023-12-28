@@ -274,11 +274,14 @@ export default class Xray {
     cmd.stdout.on('data', redirectLog);
     cmd.stderr.on('data', redirectLog);
 
-    const waitForStarted = new Promise<void>((resolve) => {
+    const waitForStarted = new Promise<void>((resolve, reject) => {
       const watchForStarted = (line: string) => {
         if (line.includes('Xray') && line.includes('started')) {
           cmd.stdout.off('data', watchForStarted);
           resolve();
+        } else if (line.includes('Failed to start')) {
+          cmd.stdout.off('data', watchForStarted);
+          reject(line);
         }
       };
 

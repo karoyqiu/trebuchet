@@ -4486,6 +4486,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"prettier@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "prettier@npm:3.1.1"
+  bin:
+    prettier: bin/prettier.cjs
+  checksum: e386855e3a1af86a748e16953f168be555ce66d6233f4ba54eb6449b88eb0c6b2ca79441b11eae6d28a7f9a5c96440ce50864b9d5f6356d331d39d6bb66c648e
+  languageName: node
+  linkType: hard
+
 "promise-retry@npm:^2.0.1":
   version: 2.0.1
   resolution: "promise-retry@npm:2.0.1"
@@ -5348,6 +5357,7 @@ __metadata:
     nanoid-dictionary: ^4.3.0
     notistack: ^3.0.1
     postcss: ^8.4.32
+    prettier: ^3.1.1
     radash: ^11.0.0
     react: ^18.2.0
     react-chartjs-2: ^5.2.0

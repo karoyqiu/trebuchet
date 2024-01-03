@@ -274,11 +274,14 @@ export default class Xray {
     cmd.stdout.on('data', redirectLog);
     cmd.stderr.on('data', redirectLog);
 
-    const waitForStarted = new Promise<void>((resolve) => {
+    const waitForStarted = new Promise<void>((resolve, reject) => {
       const watchForStarted = (line: string) => {
         if (line.includes('Xray') && line.includes('started')) {
           cmd.stdout.off('data', watchForStarted);
           resolve();
+        } else if (line.includes('Failed to start')) {
+          cmd.stdout.off('data', watchForStarted);
+          reject(line);
         }
       };
 
@@ -287,13 +290,14 @@ export default class Xray {
 
     this.child = await cmd.spawn();
     await waitForStarted;
-    await info(`Xray started with PID ${this.child.pid}`);
+    await info(`Xray started with PID ${this.child.pid} on port ${this.aport}`);
   }
 
   /** 停止 xray。 */
   public async stop() {
     if (this.child) {
       await Promise.allSettled([
+        info(`Stopping on port ${this.aport}`),
         this.child.kill(),
         removeFile(this.filename, { dir: BaseDirectory.Temp }),
       ]);

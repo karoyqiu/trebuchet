@@ -2,6 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod error;
+mod query_stats;
+
 use std::{
   fs,
   net::TcpListener,
@@ -9,6 +11,7 @@ use std::{
 };
 
 use error::{map_any_error, map_anything, Result};
+use query_stats::{query_stats, query_sys};
 use tauri::{
   App, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
   SystemTrayMenuItem, WindowEvent,
@@ -203,7 +206,9 @@ fn main() {
       download,
       download_resource,
       get_available_port,
-      test_latency
+      test_latency,
+      query_stats,
+      query_sys,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

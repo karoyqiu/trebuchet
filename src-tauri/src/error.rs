@@ -11,6 +11,8 @@ pub enum Error {
   Serde(#[from] serde_json::Error),
   #[error(transparent)]
   Tauri(#[from] tauri::Error),
+  #[error(transparent)]
+  TauriApi(#[from] tauri::api::Error),
 }
 
 // we must manually implement serde::Serialize

@@ -1,4 +1,4 @@
-import { Command } from '@tauri-apps/api/shell';
+import { invoke } from '@tauri-apps/api/tauri';
 import React from 'react';
 import db from '../db';
 import FlowLog from '../db/flowLog';
@@ -12,59 +12,38 @@ type Stats = {
   connected: boolean;
 };
 
-type StatItem = {
-  name: string;
-  value: string;
-};
-
-type StatObject = {
-  stat: StatItem[];
-};
-
-type SysObject = {
-  Uptime: number;
-};
-
 const queryStats = async () => {
-  const stats: Stats = {
+  const stats = {
     totalDownload: 0,
     totalUpload: 0,
-    deltaDownload: 0,
-    deltaUpload: 0,
+  };
+
+  if (window.xray.apiPort > 0) {
+    try {
+      const result = await invoke<Stats>('query_stats', { apiPort: window.xray.apiPort });
+      stats.totalUpload = result.totalUpload;
+      stats.totalDownload = result.totalDownload;
+    } catch (e) {
+      // Do nothing
+    }
+  }
+
+  return stats;
+};
+
+const querySys = async () => {
+  const stats = {
     uptime: 0,
     connected: false,
   };
 
   if (window.xray.apiPort > 0) {
-    const query = Command.sidecar('xray/xray', [
-      'api',
-      'statsquery',
-      `--server=127.0.0.1:${window.xray.apiPort}`,
-    ]);
-    const sys = Command.sidecar('xray/xray', [
-      'api',
-      'statssys',
-      `--server=127.0.0.1:${window.xray.apiPort}`,
-    ]);
-
-    const [querychild, syschild] = await Promise.all([query.execute(), sys.execute()]);
-
-    if (querychild.code === 0) {
-      const obj = JSON.parse(querychild.stdout) as StatObject;
-
-      for (const { name, value } of obj.stat) {
-        if (name === 'outbound>>>proxy>>>traffic>>>uplink') {
-          stats.totalUpload = parseInt(value, 10);
-        } else if (name === 'outbound>>>proxy>>>traffic>>>downlink') {
-          stats.totalDownload = parseInt(value, 10);
-        }
-      }
-    }
-
-    if (syschild.code === 0) {
-      const obj = JSON.parse(syschild.stdout) as SysObject;
-      stats.uptime = obj.Uptime;
+    try {
+      const result = await invoke<Stats>('query_sys', { apiPort: window.xray.apiPort });
+      stats.uptime = result.uptime;
       stats.connected = true;
+    } catch (e) {
+      // Do nothing
     }
   }
 
@@ -83,7 +62,7 @@ const useStats = () => {
 
   React.useEffect(() => {
     const timer = setInterval(async () => {
-      const s = await queryStats();
+      const [s, sys] = await Promise.all([queryStats(), querySys()]);
       setStats((old) => {
         const flow: FlowLog = {
           ts: Date.now(),
@@ -101,6 +80,7 @@ const useStats = () => {
 
         return {
           ...s,
+          ...sys,
           deltaDownload: flow.download,
           deltaUpload: flow.upload,
         };

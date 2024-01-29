@@ -17,38 +17,70 @@ const mbps = new Intl.NumberFormat(navigator.language, {
   maximumFractionDigits: 1,
 });
 
-export const formatSpeed = (bytesPerSecond: number) => {
+const b = new Intl.NumberFormat(navigator.language, {
+  style: 'unit',
+  unit: 'byte',
+});
+
+const kb = new Intl.NumberFormat(navigator.language, {
+  style: 'unit',
+  unit: 'kilobyte',
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+const mb = new Intl.NumberFormat(navigator.language, {
+  style: 'unit',
+  unit: 'megabyte',
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+const formatNumber = (value: number, units: Intl.NumberFormat[]) => {
   const threshold = 1024;
 
-  if (bytesPerSecond < threshold) {
-    return bps.format(bytesPerSecond);
+  if (value < threshold) {
+    return units[0].format(value);
   }
 
-  const units = [kbps, mbps];
-  let u = -1;
+  let u = 0;
 
   do {
-    bytesPerSecond /= threshold;
+    value /= threshold;
     u++;
-  } while (bytesPerSecond > threshold && u < units.length);
+  } while (value > threshold && u < units.length);
 
-  return units[u].format(bytesPerSecond);
+  return units[u].format(value);
 };
+
+export const formatSpeed = (bytesPerSecond: number) =>
+  formatNumber(bytesPerSecond, [bps, kbps, mbps]);
+export const formatAmount = (bytes: number) => formatNumber(bytes, [b, kb, mb]);
 
 type SpeedometerProps = {
   download: number;
   upload: number;
+  totalDownload: number;
+  totalUpload: number;
 };
 
 export default function Speedometer(props: SpeedometerProps) {
-  const { download, upload } = props;
+  const { download, upload, totalDownload, totalUpload } = props;
 
   return (
-    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm">
+    <div className="grid grid-cols-[auto_1fr] gap-2 text-sm items-center">
       <span className="text-error">↑</span>
-      <span className="font-mono text-end">{formatSpeed(upload)}</span>
+      <span className="font-mono text-end">
+        {formatSpeed(upload)}
+        <br />
+        {formatAmount(totalUpload)}
+      </span>
       <span className="text-success">↓</span>
-      <span className="font-mono text-end">{formatSpeed(download)}</span>
+      <span className="font-mono text-end">
+        {formatSpeed(download)}
+        <br />
+        {formatAmount(totalDownload)}
+      </span>
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { retry } from 'radash';
 import { debug, error } from 'tauri-plugin-log-api';
 import db from '../db';
 import Endpoint from '../db/endpoint';
+import SimpleQueue from './SimpleQueue';
+import settings from './settings';
 import Xray from './xray/xray';
 
 export const testLatency = async (proxyPort: number) => {
@@ -33,33 +35,47 @@ const startXray = async (ep: Endpoint) => {
 };
 
 // 测试指定节点列表的延迟
-export const testLatencies = async (eps: Endpoint[]) => {
+export const testLatencies = async (eps: Endpoint[], concurrency?: number) => {
   await Promise.all(
     eps.map((ep) => db.endpoints.where('id').equals(ep.id).modify({ latency: -1 })),
   );
 
-  const xrays: (Xray | null)[] = [];
+  //const xrays: (Xray | null)[] = [];
+  const xrays = new SimpleQueue<Xray>();
+  const tests: Promise<void>[] = [];
+
+  const test = async (xray: Xray) => {
+    const latency = await testLatency(xray.apiPort);
+    await Promise.allSettled([
+      db.endpoints.where('id').equals(xray.endpointId).modify({ latency }),
+      xray.stop(),
+    ]);
+    xrays.remove(xray);
+  };
 
   // 这里一个一个地启动，因为每次都要找一个未使用的端口
+  const limit = concurrency ?? settings.get().epTestConcurrency;
+
   for (const ep of eps) {
+    await xrays.waitForAvailable(limit);
     const xray = await retry({}, () => startXray(ep));
-    xrays.push(xray);
+
+    if (xray) {
+      xrays.enqueue(xray);
+      tests.push(test(xray));
+    } else {
+      await Promise.all([
+        error(`Failed to start xray for ${ep.name}`),
+        db.endpoints.where('id').equals(ep.id).modify({ latency: 999999 }),
+      ]);
+    }
   }
 
   // 然后同时测试延迟
-  await Promise.allSettled(
-    eps.map(async (ep, index) => {
-      const xray = xrays[index];
+  await Promise.allSettled(tests);
 
-      if (xray) {
-        const latency = await testLatency(xray.apiPort);
-        await Promise.allSettled([
-          db.endpoints.where('id').equals(ep.id).modify({ latency }),
-          xray.stop(),
-        ]);
-      }
-    }),
-  );
-
-  await Promise.all(xrays.map((xray) => xray?.stop()));
+  // 到这里，xrays 应该为空
+  if (xrays.length > 0) {
+    await error('What the fuck?!');
+  }
 };

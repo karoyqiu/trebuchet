@@ -87,7 +87,7 @@ const getInbounds = async (forTest?: boolean) => {
         settings: {
           address: '127.0.0.1',
         },
-      }
+      },
     );
   }
 
@@ -96,22 +96,19 @@ const getInbounds = async (forTest?: boolean) => {
 
 /** Xray 控制类 */
 export default class Xray {
-  private child: Child | null;
-  private filename;
-  private aport;
-
-  /**
-   * 构建 xray。
-   */
-  constructor() {
-    this.child = null;
-    this.filename = '';
-    this.aport = 0;
-  }
+  private child: Child | null = null;
+  private filename = '';
+  private aport = 0;
+  private epid = '';
 
   /** API 监听端口。 */
   public get apiPort() {
     return this.aport;
+  }
+
+  /** 节点 ID */
+  public get endpointId() {
+    return this.epid;
   }
 
   /**
@@ -128,6 +125,7 @@ export default class Xray {
     // 入站配置
     const { inbounds, apiPort } = await getInbounds(forTest);
     this.aport = apiPort;
+    this.epid = endpoint.id;
 
     // 出站配置
     const outbounds: OutboundObject[] = [
@@ -193,7 +191,7 @@ export default class Xray {
             'geoip:private',
             'geoip:cn',
           ],
-        }
+        },
       );
     }
 

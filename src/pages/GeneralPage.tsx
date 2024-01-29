@@ -32,6 +32,7 @@ export default function GeneralPage() {
       <h1 className="col-span-3 text-6xl text-center mb-12">
         Trebuchet <span className="text-base font-mono">{`v${version}`}</span>
       </h1>
+
       <span>SOCKS5 port</span>
       <span className="font-mono text-end">{settings.socksPort}</span>
       <button
@@ -51,6 +52,7 @@ export default function GeneralPage() {
       >
         <EditIcon />
       </button>
+
       <span>HTTP port</span>
       <span className="font-mono text-end">{settings.httpPort}</span>
       <button
@@ -70,6 +72,7 @@ export default function GeneralPage() {
       >
         <EditIcon />
       </button>
+
       <span>Allow LAN</span>
       <label className="col-span-2 cursor-pointer label flex gap-2 justify-end p-0">
         <span>{settings.allowLan ? 'Yes' : 'No'}</span>
@@ -83,6 +86,7 @@ export default function GeneralPage() {
           }}
         />
       </label>
+
       {/* <span>Subscription update interval</span>
       <span className="font-mono text-end">{min.format(settings.subUpdateInterval)}</span>
       <button
@@ -101,6 +105,7 @@ export default function GeneralPage() {
       >
         <EditIcon />
       </button> */}
+
       <span>Latency test interval</span>
       <span className="font-mono text-end">{min.format(settings.epTestInterval)}</span>
       <button
@@ -119,6 +124,26 @@ export default function GeneralPage() {
       >
         <EditIcon />
       </button>
+
+      <span>Latency test concurrency</span>
+      <span className="font-mono text-end">{settings.epTestConcurrency}</span>
+      <button
+        className="btn btn-sm btn-square btn-ghost"
+        onClick={async () => {
+          const value = await prompt({
+            label: 'Latency test concurrency:',
+            numeric: true,
+            value: settings.epTestConcurrency,
+          });
+
+          if (value) {
+            updateSettings({ epTestConcurrency: value });
+          }
+        }}
+      >
+        <EditIcon />
+      </button>
+
       <span>Autostart</span>
       <label className="col-span-2 cursor-pointer label flex gap-2 justify-end p-0">
         <span>{autoStart ? 'Yes' : 'No'}</span>
@@ -137,6 +162,7 @@ export default function GeneralPage() {
           }}
         />
       </label>
+
       <div className="col-span-3 h-full">
         <FlowChart />
       </div>

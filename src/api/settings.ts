@@ -11,6 +11,8 @@ interface Settings {
   subUpdateInterval: number;
   /** 节点自动测速间隔，分钟 */
   epTestInterval: number;
+  /** 节点测速并发量 */
+  epTestConcurrency: number;
 }
 
 const defaultSettings: Settings = {
@@ -19,6 +21,7 @@ const defaultSettings: Settings = {
   // 1 小时更新一次
   subUpdateInterval: 60,
   epTestInterval: 3,
+  epTestConcurrency: 32,
 };
 
 const settings = entity(defaultSettings, [persistence('settings')]);

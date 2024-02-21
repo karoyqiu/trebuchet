@@ -86,6 +86,9 @@ function App() {
                 <div className="badge badge-sm badge-primary font-mono">{subCount}</div>
               </LinkMenuItem>
             </li>
+            <li>
+              <LinkMenuItem to="rule">Rules</LinkMenuItem>
+            </li>
           </ul>
         </nav>
         <div className="divider my-0" />

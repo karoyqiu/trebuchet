@@ -1,4 +1,5 @@
 import { entity, persistence } from 'simpler-state';
+import type { RuleType } from './xray/xray';
 
 interface Settings {
   /** SOCKS 侦听端口 */
@@ -13,6 +14,8 @@ interface Settings {
   epTestInterval: number;
   /** 节点测速并发量 */
   epTestConcurrency: number;
+  /** 路由规则 */
+  rule: RuleType;
 }
 
 const defaultSettings: Settings = {
@@ -22,6 +25,7 @@ const defaultSettings: Settings = {
   subUpdateInterval: 60,
   epTestInterval: 3,
   epTestConcurrency: 32,
+  rule: 'default',
 };
 
 const settings = entity(defaultSettings, [persistence('settings')]);

@@ -6,6 +6,7 @@ import App from './App';
 import Xray from './api/xray/xray';
 import EndpointPage from './pages/EndpointPage';
 import GeneralPage from './pages/GeneralPage';
+import RulePage from './pages/RulePage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import './styles.css';
 
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
         path: 'sub',
         element: <SubscriptionPage />,
       },
+      {
+        path: 'rule',
+        element: <RulePage />,
+      },
     ],
   },
 ]);
@@ -43,5 +48,5 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <RouterProvider router={router} />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

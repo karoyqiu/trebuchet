@@ -25,7 +25,7 @@ const startXray = async (ep: Endpoint) => {
   const xray = new Xray();
 
   try {
-    await xray.start(ep, true);
+    await xray.start(ep, 'test');
     await debug(`Xray started on ${xray.apiPort} for endpoint ${ep.name}`);
     return xray;
   } catch (e) {

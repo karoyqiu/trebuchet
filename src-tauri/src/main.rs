@@ -107,6 +107,8 @@ fn copy_resource_if_not_exists(app: &App, filename: &str) -> Result<()> {
 fn show_main_window(app: &AppHandle) -> Result<()> {
   if let Some(window) = app.get_window("main") {
     window.show()?;
+    window.set_focus()?;
+    window.request_user_attention(Some(tauri::UserAttentionType::Informational))?;
   }
 
   Ok(())

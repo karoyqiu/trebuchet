@@ -1,6 +1,7 @@
 import { entity } from 'simpler-state';
 import db from '../db';
 import Endpoint from '../db/endpoint';
+import settings from './settings';
 
 export const current = entity<Endpoint | null>(null);
 
@@ -22,7 +23,7 @@ export const setCurrent = async (ep: Endpoint, force?: boolean) => {
   if (force || !isCurrent(ep)) {
     current.set(ep);
     await window.xray.stop();
-    await window.xray.start(ep);
+    await window.xray.start(ep, settings.get().rule);
   }
 };
 

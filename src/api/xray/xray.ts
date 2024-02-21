@@ -3,12 +3,14 @@ import { appConfigDir, appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
 import { info, warn } from 'tauri-plugin-log-api';
-import Endpoint from '../../db/endpoint';
+import type Endpoint from '../../db/endpoint';
 import settings from '../settings';
-import ConfigObject from './config';
-import InboundObject from './config/inbound';
-import OutboundObject from './config/outbound';
-import { RuleObject } from './config/routing';
+import type ConfigObject from './config';
+import type InboundObject from './config/inbound';
+import type OutboundObject from './config/outbound';
+import type { RuleObject } from './config/routing';
+
+export type RuleType = 'default' | 'test' | 'all';
 
 let configDir = '';
 let dataDir = '';
@@ -24,7 +26,7 @@ const redirectLog = async (line: string) => {
  * @param forTest 是否生成用于测速的入站配置
  * @returns 入站配置与 API 侦听端口
  */
-const getInbounds = async (forTest?: boolean) => {
+const getInbounds = async (forTest: boolean) => {
   const inbounds: InboundObject[] = [];
   const port = await invoke<number>('get_available_port');
 
@@ -116,14 +118,14 @@ export default class Xray {
    *
    * @param endpoint 外部节点
    */
-  public async start(endpoint: Endpoint, forTest?: boolean) {
+  public async start(endpoint: Endpoint, ruleType: RuleType = 'default') {
     if (this.child) {
       await warn('Xray already started.');
       return;
     }
 
     // 入站配置
-    const { inbounds, apiPort } = await getInbounds(forTest);
+    const { inbounds, apiPort } = await getInbounds(ruleType === 'test');
     this.aport = apiPort;
     this.epid = endpoint.id;
 
@@ -155,44 +157,49 @@ export default class Xray {
     const rules: RuleObject[] = [];
 
     // 如果只为了测试，就不加下面的规则
-    if (!forTest) {
-      rules.push(
-        {
-          type: 'field',
-          inboundTag: ['api'],
-          outboundTag: 'api',
-        },
-        {
-          type: 'field',
-          outboundTag: 'block',
-          domain: ['activity.meteor.com', 'geosite:category-ads-all'],
-        },
-        {
-          type: 'field',
-          outboundTag: 'direct',
-          domain: [
-            'domain:cypress.io',
-            'geosite:cn',
-            'geosite:private',
-            'geosite:apple-cn',
-            'geosite:google-cn',
-            'geosite:tld-cn',
-            'geosite:category-games@cn',
-          ],
-        },
-        {
-          type: 'field',
-          outboundTag: 'direct',
-          ip: [
-            '223.5.5.5/32',
-            '119.29.29.29/32',
-            '180.76.76.76/32',
-            '114.114.114.114/32',
-            'geoip:private',
-            'geoip:cn',
-          ],
-        },
-      );
+    if (ruleType !== 'test') {
+      rules.push({
+        type: 'field',
+        inboundTag: ['api'],
+        outboundTag: 'api',
+      });
+
+      if (ruleType === 'default') {
+        // 默认路由规则
+        rules.push(
+          {
+            type: 'field',
+            outboundTag: 'block',
+            domain: ['activity.meteor.com', 'geosite:category-ads-all'],
+          },
+          {
+            type: 'field',
+            outboundTag: 'direct',
+            domain: [
+              'domain:cypress.io',
+              'geosite:cn',
+              'geosite:private',
+              'geosite:apple-cn',
+              'geosite:google-cn',
+              'geosite:tld-cn',
+              'geosite:category-games@cn',
+            ],
+          },
+          {
+            type: 'field',
+            outboundTag: 'direct',
+            ip: [
+              '8.8.8.8/32',
+              '223.5.5.5/32',
+              '119.29.29.29/32',
+              '180.76.76.76/32',
+              '114.114.114.114/32',
+              'geoip:private',
+              'geoip:cn',
+            ],
+          },
+        );
+      }
     }
 
     rules.push({

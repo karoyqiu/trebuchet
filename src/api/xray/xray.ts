@@ -199,6 +199,27 @@ export default class Xray {
             ],
           },
         );
+      } else if (ruleType === 'all') {
+        // 代理全部数据
+        rules.push(
+          {
+            type: 'field',
+            outboundTag: 'direct',
+            domain: ['domain:cypress.io', 'geosite:private'],
+          },
+          {
+            type: 'field',
+            outboundTag: 'direct',
+            ip: [
+              '8.8.8.8/32',
+              '223.5.5.5/32',
+              '119.29.29.29/32',
+              '180.76.76.76/32',
+              '114.114.114.114/32',
+              'geoip:private',
+            ],
+          },
+        );
       }
     }
 

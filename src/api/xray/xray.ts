@@ -3,6 +3,7 @@ import { appConfigDir, appDataDir, join } from '@tauri-apps/api/path';
 import { Child, Command } from '@tauri-apps/api/shell';
 import { invoke } from '@tauri-apps/api/tauri';
 import { info, warn } from 'tauri-plugin-log-api';
+import db from '../../db';
 import type Endpoint from '../../db/endpoint';
 import settings from '../settings';
 import type ConfigObject from './config';
@@ -17,7 +18,11 @@ let dataDir = '';
 
 const redirectLog = async (line: string) => {
   if (!line.includes('api -> api')) {
-    await info(`--> ${line}`);
+    const id = await db.logEntries.add({ log: line });
+    await db.logEntries
+      .where('id')
+      .below(id - 1024)
+      .delete();
   }
 };
 

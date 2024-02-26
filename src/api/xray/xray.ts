@@ -21,7 +21,7 @@ const redirectLog = async (line: string) => {
     const id = await db.logEntries.add({ log: line });
     await db.logEntries
       .where('id')
-      .below(id - 1024)
+      .below(id - 100)
       .delete();
   }
 };

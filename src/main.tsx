@@ -6,6 +6,7 @@ import App from './App';
 import Xray from './api/xray/xray';
 import EndpointPage from './pages/EndpointPage';
 import GeneralPage from './pages/GeneralPage';
+import LogPage from './pages/LogPage';
 import RulePage from './pages/RulePage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import './styles.css';
@@ -40,6 +41,10 @@ const router = createBrowserRouter([
       {
         path: 'rule',
         element: <RulePage />,
+      },
+      {
+        path: 'log',
+        element: <LogPage />,
       },
     ],
   },

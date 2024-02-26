@@ -2,7 +2,7 @@ import { current, setCurrent } from '../api/currentEndpoint';
 import { updateSettings, useSettings } from '../api/settings';
 import type { RuleType } from '../api/xray/xray';
 
-export default function EndpointPage() {
+export default function RulePage() {
   const settings = useSettings();
 
   const changeRule = async (rule: RuleType) => {

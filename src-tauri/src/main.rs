@@ -53,17 +53,17 @@ fn get_available_port() -> Result<u16> {
 
 /// 测试指定代理的延迟，结果为毫秒。
 #[tauri::command]
-async fn test_latency(proxy_port: u16, timeout: Option<u64>) -> Result<i32> {
+async fn test_latency(proxy_port: u16, url: &str, timeout: Option<u64>) -> Result<i32> {
   let proxy_url = format!("socks5://127.0.0.1:{}", proxy_port);
   let client = reqwest::Client::builder()
     .timeout(Duration::new(timeout.unwrap_or(10), 0))
     .proxy(reqwest::Proxy::all(proxy_url)?)
-    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0")
+    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0")
     .build()?;
 
   let now = Instant::now();
   let status = client
-    .get("https://www.google.com/generate_204")
+    .head(url)
     .send()
     .await?
     .status();

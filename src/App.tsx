@@ -89,6 +89,9 @@ function App() {
             <li>
               <LinkMenuItem to="rule">Rules</LinkMenuItem>
             </li>
+            <li>
+              <LinkMenuItem to="log">Log</LinkMenuItem>
+            </li>
           </ul>
         </nav>
         <div className="divider my-0" />

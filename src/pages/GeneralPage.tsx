@@ -144,6 +144,24 @@ export default function GeneralPage() {
         <EditIcon />
       </button>
 
+      <span>Latency test URL</span>
+      <span className="font-mono text-end">{settings.epTestUrl}</span>
+      <button
+        className="btn btn-sm btn-square btn-ghost"
+        onClick={async () => {
+          const value = await prompt({
+            label: 'Latency test URL:',
+            value: settings.epTestUrl,
+          });
+
+          if (value) {
+            updateSettings({ epTestUrl: value });
+          }
+        }}
+      >
+        <EditIcon />
+      </button>
+
       <span>Autostart</span>
       <label className="col-span-2 cursor-pointer label flex gap-2 justify-end p-0">
         <span>{autoStart ? 'Yes' : 'No'}</span>

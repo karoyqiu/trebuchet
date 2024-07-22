@@ -1,10 +1,11 @@
+import clsx from 'clsx';
 import React from 'react';
 
-// type TextInputBox = {
-//   numeric?: false;
-//   value?: string;
-//   onClose?: (value?: string) => void;
-// };
+type TextInputBox = {
+  numeric?: false;
+  value?: string;
+  onClose?: (value?: string) => void;
+};
 
 type IntegerInputBox = {
   numeric: true;
@@ -14,7 +15,7 @@ type IntegerInputBox = {
 
 export type InputBox = {
   label?: string;
-} & IntegerInputBox;
+} & (IntegerInputBox | TextInputBox);
 
 type Context = {
   prompt: (values: InputBox) => void;
@@ -43,17 +44,21 @@ export default function InputBoxProvider(props: { children?: React.ReactNode }) 
         <form className="modal-box" method="dialog" autoComplete="off">
           <p className="py-4">{content.label}</p>
           <input
-            type="text"
-            className="input input-bordered w-full font-mono text-right"
+            type={content.numeric ? 'number' : 'text'}
+            className={clsx(
+              'input input-bordered w-full font-mono',
+              content.numeric && 'text-right',
+            )}
             value={content.value ?? 0}
             onChange={(event) => {
-              const value = parseInt(event.target.value, 10);
+              if (content.numeric) {
+                const value = parseInt(event.target.value, 10);
 
-              if (value) {
-                setContent((old) => ({
-                  ...old,
-                  value,
-                }));
+                if (value) {
+                  setContent({ ...content, value });
+                }
+              } else {
+                setContent({ ...content, value: event.target.value });
               }
             }}
           />
@@ -63,6 +68,7 @@ export default function InputBoxProvider(props: { children?: React.ReactNode }) 
             </button>
             <button
               className="btn btn-primary"
+              // @ts-expect-error: unknown?
               onClick={() => content.onClose && content.onClose(content.value)}
             >
               OK

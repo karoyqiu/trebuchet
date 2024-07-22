@@ -63,7 +63,7 @@ async fn test_latency(proxy_port: u16, url: &str, timeout: Option<u64>) -> Resul
 
   let now = Instant::now();
   let status = client
-    .get(url)
+    .head(url)
     .send()
     .await?
     .status();

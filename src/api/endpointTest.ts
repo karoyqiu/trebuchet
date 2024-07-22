@@ -4,13 +4,13 @@ import { debug, error } from 'tauri-plugin-log-api';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import SimpleQueue from './SimpleQueue';
-import settings from './settings';
+import settings, { getSettings } from './settings';
 import Xray from './xray/xray';
 
-export const testLatency = async (proxyPort: number) => {
+export const testLatency = async (proxyPort: number, url: string) => {
   try {
     await debug(`Testing on port ${proxyPort}`);
-    const latency = await invoke<number>('test_latency', { proxyPort });
+    const latency = await invoke<number>('test_latency', { proxyPort, url });
     return latency;
   } catch (e) {
     // 测试失败
@@ -43,9 +43,10 @@ export const testLatencies = async (eps: Endpoint[], concurrency?: number) => {
   //const xrays: (Xray | null)[] = [];
   const xrays = new SimpleQueue<Xray>();
   const tests: Promise<void>[] = [];
+  const { epTestUrl } = getSettings();
 
   const test = async (xray: Xray) => {
-    const latency = await testLatency(xray.apiPort);
+    const latency = await testLatency(xray.apiPort, epTestUrl);
     await Promise.allSettled([
       db.endpoints.where('id').equals(xray.endpointId).modify({ latency }),
       xray.stop(),

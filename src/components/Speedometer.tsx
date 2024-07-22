@@ -48,7 +48,7 @@ const formatNumber = (value: number, units: Intl.NumberFormat[]) => {
   do {
     value /= threshold;
     u++;
-  } while (value > threshold && u < units.length);
+  } while (value > threshold && u < units.length - 1);
 
   return units[u].format(value);
 };

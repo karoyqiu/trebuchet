@@ -6,6 +6,7 @@ import { selectFastest } from '../api/currentEndpoint';
 import { updateSettings, useSettings } from '../api/settings';
 import useInputBox from '../api/useInputBox';
 import FlowChart from '../components/FlowChart';
+import WebsiteSelectDialog from '../components/WebsiteSelectDialog';
 
 const min = new Intl.NumberFormat(navigator.language, {
   style: 'unit',
@@ -17,6 +18,7 @@ export default function GeneralPage() {
   const [autoStart, setAutoStart] = React.useState(false);
   const prompt = useInputBox();
   const settings = useSettings();
+  const websiteRef = React.useRef<HTMLDialogElement>(null);
 
   React.useEffect(() => {
     getVersion()
@@ -148,19 +150,21 @@ export default function GeneralPage() {
       <span className="font-mono text-end">{settings.epTestUrl}</span>
       <button
         className="btn btn-sm btn-square btn-ghost"
-        onClick={async () => {
-          const value = await prompt({
-            label: 'Latency test URL:',
-            value: settings.epTestUrl,
-          });
-
-          if (value) {
-            updateSettings({ epTestUrl: value });
-          }
+        onClick={() => {
+          websiteRef.current?.showModal();
         }}
       >
         <EditIcon />
       </button>
+      <WebsiteSelectDialog
+        ref={websiteRef}
+        url={settings.epTestUrl}
+        onClose={(value) => {
+          if (value) {
+            updateSettings({ epTestUrl: value });
+          }
+        }}
+      />
 
       <span>Autostart</span>
       <label className="col-span-2 cursor-pointer label flex gap-2 justify-end p-0">

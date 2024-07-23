@@ -80,6 +80,7 @@ export default function SubscriptionList() {
               sub={item}
               onEdit={(sub) => {
                 setSub(sub);
+                console.log('Show');
                 ref.current?.showModal();
               }}
             />
@@ -89,6 +90,7 @@ export default function SubscriptionList() {
       <SubscriptionDialog
         ref={ref}
         onClose={async (values) => {
+          console.log('onClose');
           ref.current?.close();
 
           if (values?.id) {

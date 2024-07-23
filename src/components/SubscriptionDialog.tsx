@@ -22,14 +22,13 @@ const SubscriptionDialog = React.forwardRef<HTMLDialogElement, SubscriptionDialo
             validationSchema={subscriptionSchema}
             validateOnChange={false}
             validateOnBlur={false}
-            onReset={() => onClose()}
             onSubmit={onClose}
           >
             <Form autoComplete="off" autoSave="off" className="flex flex-col" method="dialog">
               <TextField name="name" label="Name" required />
               <TextField name="url" label="URL" required />
               <div className="modal-action">
-                <button className="btn" type="reset">
+                <button className="btn" type="button" onClick={() => onClose()}>
                   Cancel
                 </button>
                 <button className="btn btn-primary" type="submit">
@@ -41,7 +40,7 @@ const SubscriptionDialog = React.forwardRef<HTMLDialogElement, SubscriptionDialo
         </div>
       </dialog>
     );
-  }
+  },
 );
 
 export default SubscriptionDialog;

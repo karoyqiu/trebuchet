@@ -13,7 +13,10 @@ use std::{
   time::{Duration, Instant},
 };
 
-use db::{db_insert_subscription, initialize, DbState};
+use db::{
+  db_count_subscriptions, db_insert_subscription, db_query_subscriptions, db_remove_subscription,
+  db_update_subscription, initialize, DbState,
+};
 use error::{map_any_error, map_anything, Result};
 use log::LevelFilter;
 use query_stats::{query_stats, query_sys};
@@ -126,7 +129,14 @@ fn export_bindings() {
   // );
 
   tauri_specta::ts::export_with_cfg(
-    collect_types![db_insert_subscription,].unwrap(),
+    collect_types![
+      db_count_subscriptions,
+      db_insert_subscription,
+      db_query_subscriptions,
+      db_remove_subscription,
+      db_update_subscription,
+    ]
+    .unwrap(),
     config,
     "../src/api/bindings.ts",
   )
@@ -248,7 +258,11 @@ fn main() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+      db_count_subscriptions,
       db_insert_subscription,
+      db_query_subscriptions,
+      db_remove_subscription,
+      db_update_subscription,
       download,
       download_resource,
       get_available_port,

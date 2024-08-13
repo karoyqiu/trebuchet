@@ -4,7 +4,7 @@ import { fork, sift } from 'radash';
 import { error, info, warn } from 'tauri-plugin-log-api';
 import { parse as parseUri } from 'uri-js';
 import db from '../db';
-import { Subscription } from '../db/subscription';
+import { Subscription, subscriptions } from '../db/subscription';
 import { selectFastest } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
 import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
@@ -73,8 +73,8 @@ export const updateSubscription = async (sub: Subscription) => {
         }
 
         return ep;
-      })
-    )
+      }),
+    ),
   );
 
   if (eps.length > 0) {
@@ -94,7 +94,11 @@ export const updateSubscription = async (sub: Subscription) => {
 export const updateSubscriptions = async () => {
   await info('Updating subscriptions now');
 
-  const subs = await db.subs.toArray();
+  const subs = subscriptions.get();
+
+  if (!subs || subs.length === 0) {
+    return;
+  }
 
   // 按启用/禁用分组，删除所有禁用的节点
   const [enabled, disabled] = fork(subs, (sub) => !sub.disabled);

@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { current, setCurrent } from '../api/currentEndpoint';
 import db from '../db';
+import { subscriptions } from '../db/subscription';
 import LatencyBadge from './LatencyBadge';
 
 export default function EndpointList() {
-  const subs = useLiveQuery(() => db.subs.toArray(), []) ?? [];
+  const subs = subscriptions.use() ?? [];
   const items = useLiveQuery(() => db.endpoints.toCollection().sortBy('latency'), []) ?? [];
   const cur = current.use();
 

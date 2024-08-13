@@ -11,10 +11,38 @@ declare global {
 const invoke = () => window.__TAURI_INVOKE__;
 
 /**
+ * 查询订阅数量
+ */
+export function dbCountSubscriptions() {
+    return invoke()<number>("db_count_subscriptions")
+}
+
+/**
  * 插入订阅
  */
 export function dbInsertSubscription(doc: Subscription) {
     return invoke()<boolean>("db_insert_subscription", { doc })
+}
+
+/**
+ * 查询订阅
+ */
+export function dbQuerySubscriptions() {
+    return invoke()<Subscription[]>("db_query_subscriptions")
+}
+
+/**
+ * 删除订阅
+ */
+export function dbRemoveSubscription(id: number) {
+    return invoke()<boolean>("db_remove_subscription", { id })
+}
+
+/**
+ * 更新订阅
+ */
+export function dbUpdateSubscription(doc: Subscription) {
+    return invoke()<boolean>("db_update_subscription", { doc })
 }
 
 /**

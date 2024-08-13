@@ -1,15 +1,12 @@
 import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg?react';
 import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react';
 import RefreshIcon from '@material-symbols/svg-400/outlined/refresh.svg?react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import React from 'react';
+import { dbUpdateSubscription } from '../api/bindings';
 import { updateSubscription } from '../api/subscription';
 import useSubscriptionUpdating from '../api/useSubscriptionUpdating';
-import db from '../db';
-import { Subscription } from '../db/subscription';
+import { Subscription, subscriptions } from '../db/subscription';
 import SubscriptionDialog from './SubscriptionDialog';
-
-const enableSub = (id: number, enabled: boolean) => db.subs.update(id, { disabled: !enabled });
 
 type SubscriptionRowProps = {
   sub: Subscription;
@@ -29,7 +26,9 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
               type="checkbox"
               className="checkbox checkbox-primary"
               checked={!sub.disabled}
-              onChange={(event) => enableSub(sub.id!, event.target.checked)}
+              onChange={(event) =>
+                dbUpdateSubscription({ ...sub, disabled: !event.target.checked })
+              }
             />
           </label>
         </div>
@@ -66,9 +65,9 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
 };
 
 export default function SubscriptionList() {
-  const [sub, setSub] = React.useState<Subscription>({ name: '', url: '' });
+  const [sub, setSub] = React.useState<Subscription>({ id: 0, name: '', url: '', disabled: null });
   const ref = React.useRef<HTMLDialogElement>(null);
-  const items = useLiveQuery(() => db.subs.toArray(), []) ?? [];
+  const items = subscriptions.use() ?? [];
 
   return (
     <>
@@ -94,7 +93,7 @@ export default function SubscriptionList() {
           ref.current?.close();
 
           if (values?.id) {
-            await db.subs.update(values.id, values);
+            await dbUpdateSubscription(values);
           }
         }}
         sub={sub}

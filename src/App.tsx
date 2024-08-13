@@ -14,6 +14,8 @@ import InputBoxProvider from './components/InputBoxProvider';
 import LinkMenuItem from './components/LinkMenuItem';
 import Speedometer from './components/Speedometer';
 import db from './db';
+import { subscriptionsCount } from './db/subscription';
+import useListenDbChange from './db/useListenDbChange';
 
 // 更新 geoip.dat & geosite.dat
 const updateGeosites = async () => {
@@ -31,7 +33,7 @@ const updateGeosites = async () => {
 
 function App() {
   const epCount = useLiveQuery(() => db.endpoints.count(), []);
-  const subCount = useLiveQuery(() => db.subs.count(), []);
+  const subCount = subscriptionsCount.use() ?? 0;
 
   // 加载完成之后再显示窗口
   React.useEffect(() => {
@@ -53,9 +55,9 @@ function App() {
 
   const stats = useStats();
 
-  React.useEffect(() => {
-    db.migrateSubs();
-  }, []);
+  React.useEffect(() => {}, []);
+
+  useListenDbChange();
 
   return (
     <div className="flex w-full h-full">

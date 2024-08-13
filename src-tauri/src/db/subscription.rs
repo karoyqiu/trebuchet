@@ -6,6 +6,7 @@ use specta::Type;
 #[derive(Debug, Deserialize, Serialize, Type, Model)]
 pub struct Subscription {
   /// 订阅分组 ID
+  #[ormlite(primary_key)]
   pub id: i64,
   /// 名称
   pub name: String,

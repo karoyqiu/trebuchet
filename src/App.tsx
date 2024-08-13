@@ -53,6 +53,10 @@ function App() {
 
   const stats = useStats();
 
+  React.useEffect(() => {
+    db.migrateSubs();
+  }, []);
+
   return (
     <div className="flex w-full h-full">
       <SnackbarProvider

@@ -1,4 +1,5 @@
 import Dexie, { Table } from 'dexie';
+import { dbInsertSubscription } from '../api/bindings';
 import type Endpoint from './endpoint';
 import type FlowLog from './flowLog';
 import type LogEntry from './logEntry';
@@ -29,6 +30,16 @@ class Database extends Dexie {
           url: 'https://www.google.com/generate_204',
         }),
       );
+  }
+
+  async migrateSubs() {
+    const docs = await this.subs.toArray();
+
+    await Promise.all(
+      docs.map((doc) =>
+        dbInsertSubscription({ ...doc, id: doc.id ?? 0, disabled: doc.disabled ?? null }),
+      ),
+    );
   }
 }
 

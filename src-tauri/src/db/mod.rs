@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
+use log::debug;
 use ormlite::{
   sqlite::{SqliteConnectOptions, SqliteConnection, SqliteJournalMode, SqliteSynchronous},
-  Connection, Model,
+  Connection, Executor, Model, Row, TableMeta,
 };
 use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, State};
@@ -11,6 +12,8 @@ use crate::error::Result;
 
 pub mod endpoint;
 pub mod subscription;
+
+const CURRENT_DB_VERSION: u32 = 2;
 
 pub struct DbState {
   pub db: Arc<Mutex<Option<SqliteConnection>>>,
@@ -36,9 +39,27 @@ pub async fn initialize(app_handle: &AppHandle, readonly: bool) -> Result<Sqlite
     .create_if_missing(!readonly)
     .optimize_on_close(!readonly, None)
     .read_only(readonly);
-  let db = SqliteConnection::connect_with(&options).await?;
+  let mut db = SqliteConnection::connect_with(&options).await?;
+
+  upgrade_if_needed(&mut db).await?;
 
   Ok(db)
+}
+
+async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
+  let version = db.fetch_one("PRAGMA user_version").await?;
+  let version = version.try_get::<u32, usize>(0)?;
+  debug!("Current db version {}", version);
+
+  if version < CURRENT_DB_VERSION {
+    let sql = format!("CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, disabled INTEGER)", Subscription::table_name(), Subscription::primary_key().unwrap());
+    db.execute(sql.as_str()).await?;
+
+    // let sql = format!("PRAGMA user_version = {}", CURRENT_DB_VERSION);
+    // db.execute(sql.as_str()).await?;
+  }
+
+  Ok(())
 }
 
 /// 插入订阅

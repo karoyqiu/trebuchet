@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod command;
 mod db;
 mod error;
 mod query_stats;
@@ -13,6 +14,7 @@ use std::{
   time::{Duration, Instant},
 };
 
+use command::update_subscriptions;
 use db::{
   db_count_subscriptions, db_insert_subscription, db_query_subscriptions, db_remove_subscription,
   db_update_subscription, initialize, DbState,
@@ -135,6 +137,7 @@ fn export_bindings() {
       db_query_subscriptions,
       db_remove_subscription,
       db_update_subscription,
+      update_subscriptions,
     ]
     .unwrap(),
     config,
@@ -269,6 +272,7 @@ fn main() {
       test_latency,
       query_stats,
       query_sys,
+      update_subscriptions,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

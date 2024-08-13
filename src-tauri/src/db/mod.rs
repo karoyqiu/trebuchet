@@ -1,19 +1,23 @@
+pub mod endpoint;
+pub mod settings;
+pub mod subscription;
+
 use std::sync::Arc;
 
 use log::debug;
 use ormlite::{
+  model::{HasModelBuilder, ModelBuilder},
   sqlite::{
     Sqlite, SqliteConnectOptions, SqliteConnection, SqliteJournalMode, SqliteRow, SqliteSynchronous,
   },
+  types::Json,
   Connection, Executor, FromRow, Model, Row, TableMeta,
 };
+use settings::{Settings, SettingsTable};
 use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
 
 use crate::error::Result;
-
-pub mod endpoint;
-pub mod subscription;
 
 const CURRENT_DB_VERSION: u32 = 2;
 
@@ -55,6 +59,13 @@ async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
 
   if version < CURRENT_DB_VERSION {
     let sql = format!("CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, disabled INTEGER)", Subscription::table_name(), Subscription::primary_key().unwrap());
+    db.execute(sql.as_str()).await?;
+
+    let sql = format!(
+      "CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, settings TEXT NOT NULL)",
+      SettingsTable::table_name(),
+      SettingsTable::primary_key().unwrap()
+    );
     db.execute(sql.as_str()).await?;
 
     // let sql = format!("PRAGMA user_version = {}", CURRENT_DB_VERSION);
@@ -113,7 +124,7 @@ where
 }
 
 /// 查询
-async fn query<T>(state: State<'_, DbState>) -> Result<Vec<T>>
+async fn query<T>(state: &State<'_, DbState>) -> Result<Vec<T>>
 where
   T: Model<Sqlite> + for<'r> FromRow<'r, SqliteRow> + Send + Sync + Unpin + 'static,
 {
@@ -125,7 +136,7 @@ where
 }
 
 /// 计数
-async fn count<T>(state: State<'_, DbState>) -> Result<u32>
+async fn count<T>(state: &State<'_, DbState>) -> Result<u32>
 where
   T: TableMeta,
 {
@@ -146,7 +157,11 @@ pub async fn db_insert_subscription(app: AppHandle, doc: Subscription) -> Result
   let mut db_guard = state.db.lock().await;
   let db = db_guard.as_mut().expect("Database not intialized");
 
-  doc.insert(db).await?;
+  Subscription::builder()
+    .name(doc.name)
+    .url(doc.url)
+    .insert(db)
+    .await?;
 
   // 通知数据库变动
   notify_change::<Subscription>(&app)?;
@@ -172,12 +187,66 @@ pub async fn db_update_subscription(app: AppHandle, doc: Subscription) -> Result
 #[tauri::command]
 #[specta::specta]
 pub async fn db_query_subscriptions(state: State<'_, DbState>) -> Result<Vec<Subscription>> {
-  query::<Subscription>(state).await
+  query::<Subscription>(&state).await
 }
 
 /// 查询订阅数量
 #[tauri::command]
 #[specta::specta]
 pub async fn db_count_subscriptions(state: State<'_, DbState>) -> Result<u32> {
-  count::<Subscription>(state).await
+  count::<Subscription>(&state).await
+}
+
+/// 获取设置
+#[tauri::command]
+#[specta::specta]
+pub async fn db_get_settings(state: State<'_, DbState>) -> Result<Settings> {
+  let all = query::<SettingsTable>(&state).await?;
+
+  if !all.is_empty() {
+    return Ok(all[0].settings.0.clone());
+  }
+
+  let settings = Settings {
+    socks_port: 1089,
+    http_port: 1090,
+    allow_lan: false,
+    // 1 小时更新一次
+    sub_update_interval: 60,
+    ep_test_interval: 3,
+    ep_test_concurrency: 32,
+    ep_test_url: String::from("https://www.google.com/generate_204"),
+    rule: String::from("default"),
+  };
+
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  SettingsTable {
+    id: 1,
+    settings: Json::from(settings.clone()),
+  }
+  .insert(db)
+  .await?;
+
+  Ok(settings)
+}
+
+/// 保存设置
+#[tauri::command]
+#[specta::specta]
+pub async fn db_set_settings(state: State<'_, DbState>, settings: Settings) -> Result<()> {
+  let all = query::<SettingsTable>(&state).await?;
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+  let settings = Json::from(settings);
+
+  if all.is_empty() {
+    SettingsTable { id: 1, settings }.insert(db).await?;
+  } else {
+    let s = &all[0];
+    s.update_partial().settings(settings).update(db).await?;
+  }
+
+  Ok(())
 }

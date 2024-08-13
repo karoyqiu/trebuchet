@@ -18,6 +18,13 @@ export function dbCountSubscriptions() {
 }
 
 /**
+ * 获取设置
+ */
+export function dbGetSettings() {
+    return invoke()<Settings>("db_get_settings")
+}
+
+/**
  * 插入订阅
  */
 export function dbInsertSubscription(doc: Subscription) {
@@ -39,12 +46,27 @@ export function dbRemoveSubscription(id: number) {
 }
 
 /**
+ * 保存设置
+ */
+export function dbSetSettings(settings: Settings) {
+    return invoke()<null>("db_set_settings", { settings })
+}
+
+/**
  * 更新订阅
  */
 export function dbUpdateSubscription(doc: Subscription) {
     return invoke()<boolean>("db_update_subscription", { doc })
 }
 
+/**
+ * 更新订阅
+ */
+export function updateSubscriptions() {
+    return invoke()<null>("update_subscriptions")
+}
+
+export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
 /**
  * 订阅分组
  */

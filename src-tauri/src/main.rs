@@ -16,8 +16,8 @@ use std::{
 
 use command::update_subscriptions;
 use db::{
-  db_count_subscriptions, db_insert_subscription, db_query_subscriptions, db_remove_subscription,
-  db_update_subscription, initialize, DbState,
+  db_count_subscriptions, db_get_settings, db_insert_subscription, db_query_subscriptions,
+  db_remove_subscription, db_set_settings, db_update_subscription, initialize, DbState,
 };
 use error::{map_any_error, map_anything, Result};
 use log::LevelFilter;
@@ -114,28 +114,24 @@ fn copy_resource_if_not_exists(app: &App, filename: &str) -> Result<()> {
 /// 导出 API 绑定代码
 #[cfg(debug_assertions)]
 fn export_bindings() {
+  //use db::settings::Settings;
   use specta::{
     collect_types,
-    ts::{BigIntExportBehavior, ExportConfiguration},
+    ts::{export, BigIntExportBehavior, ExportConfiguration},
   };
 
   let config = ExportConfiguration::new().bigint(BigIntExportBehavior::Number);
 
-  // println!(
-  //   "{}",
-  //   specta::ts::export::<SeedItemReadEvent>(&config).unwrap()
-  // );
-  // println!(
-  //   "{}",
-  //   specta::ts::export::<SeedUnreadCountEvent>(&config).unwrap()
-  // );
+  //println!("{}", export::<Settings>(&config).unwrap());
 
   tauri_specta::ts::export_with_cfg(
     collect_types![
       db_count_subscriptions,
+      db_get_settings,
       db_insert_subscription,
       db_query_subscriptions,
       db_remove_subscription,
+      db_set_settings,
       db_update_subscription,
       update_subscriptions,
     ]
@@ -262,9 +258,11 @@ fn main() {
     })
     .invoke_handler(tauri::generate_handler![
       db_count_subscriptions,
+      db_get_settings,
       db_insert_subscription,
       db_query_subscriptions,
       db_remove_subscription,
+      db_set_settings,
       db_update_subscription,
       download,
       download_resource,

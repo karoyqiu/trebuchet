@@ -1,22 +1,28 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod db;
 mod error;
 mod query_stats;
+mod xray;
 
 use std::{
   fs,
   net::TcpListener,
+  sync::Arc,
   time::{Duration, Instant},
 };
 
+use db::{db_insert_subscription, initialize, DbState};
 use error::{map_any_error, map_anything, Result};
+use log::LevelFilter;
 use query_stats::{query_stats, query_sys};
 use tauri::{
-  App, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
-  SystemTrayMenuItem, WindowEvent,
+  async_runtime::Mutex, App, AppHandle, CustomMenuItem, Manager, State, SystemTray,
+  SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, WindowBuilder, WindowEvent,
 };
 use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_log::LogTarget;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -62,11 +68,7 @@ async fn test_latency(proxy_port: u16, url: &str, timeout: Option<u64>) -> Resul
     .build()?;
 
   let now = Instant::now();
-  let status = client
-    .head(url)
-    .send()
-    .await?
-    .status();
+  let status = client.head(url).send().await?.status();
   let elapsed = now.elapsed().as_millis() as i32;
 
   if status.is_success() {
@@ -104,17 +106,34 @@ fn copy_resource_if_not_exists(app: &App, filename: &str) -> Result<()> {
   Err(map_anything("App data dir or source file does not exist."))
 }
 
-fn show_main_window(app: &AppHandle) -> Result<()> {
-  if let Some(window) = app.get_window("main") {
-    window.show()?;
-    window.set_focus()?;
-    window.request_user_attention(Some(tauri::UserAttentionType::Informational))?;
-  }
+/// 导出 API 绑定代码
+#[cfg(debug_assertions)]
+fn export_bindings() {
+  use specta::{
+    collect_types,
+    ts::{BigIntExportBehavior, ExportConfiguration},
+  };
 
-  Ok(())
+  let config = ExportConfiguration::new().bigint(BigIntExportBehavior::Number);
+
+  // println!(
+  //   "{}",
+  //   specta::ts::export::<SeedItemReadEvent>(&config).unwrap()
+  // );
+  // println!(
+  //   "{}",
+  //   specta::ts::export::<SeedUnreadCountEvent>(&config).unwrap()
+  // );
+
+  tauri_specta::ts::export_with_cfg(
+    collect_types![db_insert_subscription,].unwrap(),
+    config,
+    "../src/api/bindings.ts",
+  )
+  .unwrap();
 }
 
-fn main() {
+fn create_system_try() -> SystemTray {
   let show = CustomMenuItem::new("show", "Show");
   let restart = CustomMenuItem::new("restart", "Restart");
   let exit = CustomMenuItem::new("exit", "Exit");
@@ -123,6 +142,28 @@ fn main() {
     .add_native_item(SystemTrayMenuItem::Separator)
     .add_item(restart)
     .add_item(exit);
+
+  SystemTray::new()
+    .with_menu(tray_menu)
+    .with_tooltip("Trebuchet")
+}
+
+/// 显示主窗口。如果没有主窗口，则根据配置创建一个。
+fn show_main_window(app: &AppHandle) -> Result<()> {
+  if let Some(window) = app.get_window("main") {
+    window.show()?;
+    window.set_focus()?;
+    window.request_user_attention(Some(tauri::UserAttentionType::Informational))?;
+  } else {
+    WindowBuilder::from_config(app, app.config().tauri.windows[0].clone()).build()?;
+  }
+
+  Ok(())
+}
+
+fn main() {
+  #[cfg(debug_assertions)]
+  export_bindings();
 
   let mut builder = tauri::Builder::default();
 
@@ -138,33 +179,22 @@ fn main() {
     .plugin(
       tauri_plugin_log::Builder::default()
         .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+        .targets([LogTarget::Stderr, LogTarget::LogDir])
+        .level(LevelFilter::Warn)
+        .level_for("trebuchet", LevelFilter::Trace)
+        .level_for("webview", LevelFilter::Trace)
         .build(),
     )
     .plugin(tauri_plugin_autostart::init(
       MacosLauncher::LaunchAgent,
       Some(vec!["-a"]),
     ))
-    .system_tray(
-      SystemTray::new()
-        .with_menu(tray_menu)
-        .with_tooltip("Trebuchet"),
-    )
+    .system_tray(create_system_try())
     .on_system_tray_event(|app, event| match event {
-      SystemTrayEvent::DoubleClick {
-        tray_id: _,
-        position: _,
-        size: _,
-        ..
-      }
-      | SystemTrayEvent::LeftClick {
-        tray_id: _,
-        position: _,
-        size: _,
-        ..
-      } => {
+      SystemTrayEvent::DoubleClick { .. } | SystemTrayEvent::LeftClick { .. } => {
         show_main_window(app).unwrap();
       }
-      SystemTrayEvent::MenuItemClick { tray_id: _, id, .. } => match id.as_str() {
+      SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
         "show" => {
           show_main_window(app).unwrap();
         }
@@ -185,6 +215,9 @@ fn main() {
       }
       _ => {}
     })
+    .manage(DbState {
+      db: Arc::new(Mutex::new(None)),
+    })
     .setup(|app| {
       let resolver = app.path_resolver();
 
@@ -202,9 +235,20 @@ fn main() {
         copy_resource_if_not_exists(app, "geosite.dat")?;
       }
 
+      // 连接数据库
+      let handle = app.handle();
+
+      tauri::async_runtime::block_on(async move {
+        let state: State<DbState> = handle.state();
+        let db = initialize(&handle, false).await.unwrap();
+        let mut db_guard = state.db.lock().await;
+        *db_guard = Some(db);
+      });
+
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+      db_insert_subscription,
       download,
       download_resource,
       get_available_port,

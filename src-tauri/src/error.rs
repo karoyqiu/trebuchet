@@ -13,6 +13,10 @@ pub enum Error {
   Tauri(#[from] tauri::Error),
   #[error(transparent)]
   TauriApi(#[from] tauri::api::Error),
+  #[error(transparent)]
+  Db(#[from] ormlite::Error),
+  #[error(transparent)]
+  Sqlx(#[from] ormlite::SqlxError),
 }
 
 // we must manually implement serde::Serialize

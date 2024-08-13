@@ -2,7 +2,7 @@ import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg?react';
 import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react';
 import RefreshIcon from '@material-symbols/svg-400/outlined/refresh.svg?react';
 import React from 'react';
-import { dbUpdateSubscription } from '../api/bindings';
+import { dbRemoveSubscription, dbUpdateSubscription } from '../api/bindings';
 import { updateSubscription } from '../api/subscription';
 import useSubscriptionUpdating from '../api/useSubscriptionUpdating';
 import { Subscription, subscriptions } from '../db/subscription';
@@ -11,10 +11,11 @@ import SubscriptionDialog from './SubscriptionDialog';
 type SubscriptionRowProps = {
   sub: Subscription;
   onEdit: (sub: Subscription) => void;
+  onRemove: (sub: Subscription) => void;
 };
 
 const SubscriptionRow = (props: SubscriptionRowProps) => {
-  const { sub, onEdit } = props;
+  const { sub, onEdit, onRemove } = props;
   const isUpdating = useSubscriptionUpdating(sub.id!);
 
   return (
@@ -54,7 +55,7 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
             </button>
           </div>
           <div className="tooltip tooltip-bottom" data-tip="Remove">
-            <button className="btn btn-error btn-square join-item">
+            <button className="btn btn-error btn-square join-item" onClick={() => onRemove(sub)}>
               <DeleteIcon />
             </button>
           </div>
@@ -82,6 +83,7 @@ export default function SubscriptionList() {
                 console.log('Show');
                 ref.current?.showModal();
               }}
+              onRemove={(sub) => dbRemoveSubscription(sub.id)}
             />
           ))}
         </tbody>

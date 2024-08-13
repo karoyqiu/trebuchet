@@ -2,8 +2,10 @@ use std::sync::Arc;
 
 use log::debug;
 use ormlite::{
-  sqlite::{SqliteConnectOptions, SqliteConnection, SqliteJournalMode, SqliteSynchronous},
-  Connection, Executor, Model, Row, TableMeta,
+  sqlite::{
+    Sqlite, SqliteConnectOptions, SqliteConnection, SqliteJournalMode, SqliteRow, SqliteSynchronous,
+  },
+  Connection, Executor, FromRow, Model, Row, TableMeta,
 };
 use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
@@ -62,6 +64,80 @@ async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
   Ok(())
 }
 
+/// 通知数据库变动
+fn notify_change<T>(app: &AppHandle) -> Result<()>
+where
+  T: TableMeta,
+{
+  let event = format!("app://db/{}", T::table_name());
+  app.emit_all(event.as_str(), ())?;
+  Ok(())
+}
+
+/// 更新
+async fn update<T>(app: &AppHandle, doc: T) -> Result<bool>
+where
+  T: Model<Sqlite> + TableMeta + Send,
+{
+  let state: State<DbState> = app.state();
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  doc.update_all_fields(db).await?;
+
+  // 通知数据库变动
+  notify_change::<T>(&app)?;
+
+  Ok(true)
+}
+
+/// 删除
+async fn remove<T>(app: &AppHandle, id: i64) -> Result<bool>
+where
+  T: Model<Sqlite> + TableMeta + Send,
+{
+  let state: State<DbState> = app.state();
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  let sql = format!("DELETE FROM {} WHERE id = ?", T::table_name());
+  ormlite::query(sql.as_str())
+    .bind(id)
+    .fetch_optional(db)
+    .await?;
+
+  // 通知数据库变动
+  notify_change::<T>(&app)?;
+
+  Ok(true)
+}
+
+/// 查询
+async fn query<T>(state: State<'_, DbState>) -> Result<Vec<T>>
+where
+  T: Model<Sqlite> + for<'r> FromRow<'r, SqliteRow> + Send + Sync + Unpin + 'static,
+{
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  let items = T::select().fetch_all(db).await?;
+  Ok(items)
+}
+
+/// 计数
+async fn count<T>(state: State<'_, DbState>) -> Result<u32>
+where
+  T: TableMeta,
+{
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  let sql = format!("SELECT COUNT(*) FROM {}", T::table_name());
+  let row = ormlite::query(sql.as_str()).fetch_one(db).await?;
+  let count = row.try_get::<u32, usize>(0)?;
+  Ok(count)
+}
+
 /// 插入订阅
 #[tauri::command]
 #[specta::specta]
@@ -73,7 +149,7 @@ pub async fn db_insert_subscription(app: AppHandle, doc: Subscription) -> Result
   doc.insert(db).await?;
 
   // 通知数据库变动
-  app.emit_all("app://db/subscription", ())?;
+  notify_change::<Subscription>(&app)?;
 
   Ok(true)
 }
@@ -82,58 +158,26 @@ pub async fn db_insert_subscription(app: AppHandle, doc: Subscription) -> Result
 #[tauri::command]
 #[specta::specta]
 pub async fn db_remove_subscription(app: AppHandle, id: i64) -> Result<bool> {
-  let state: State<DbState> = app.state();
-  let mut db_guard = state.db.lock().await;
-  let db = db_guard.as_mut().expect("Database not intialized");
-
-  Subscription::query("DELETE FROM subscription WHERE id = ?")
-    .bind(id)
-    .fetch_one(db)
-    .await?;
-
-  // 通知数据库变动
-  app.emit_all("app://db/subscription", ())?;
-
-  Ok(true)
+  remove::<Subscription>(&app, id).await
 }
 
 /// 更新订阅
 #[tauri::command]
 #[specta::specta]
 pub async fn db_update_subscription(app: AppHandle, doc: Subscription) -> Result<bool> {
-  let state: State<DbState> = app.state();
-  let mut db_guard = state.db.lock().await;
-  let db = db_guard.as_mut().expect("Database not intialized");
-
-  doc.update_all_fields(db).await?;
-
-  // 通知数据库变动
-  app.emit_all("app://db/subscription", ())?;
-
-  Ok(true)
+  update(&app, doc).await
 }
 
 /// 查询订阅
 #[tauri::command]
 #[specta::specta]
 pub async fn db_query_subscriptions(state: State<'_, DbState>) -> Result<Vec<Subscription>> {
-  let mut db_guard = state.db.lock().await;
-  let db = db_guard.as_mut().expect("Database not intialized");
-
-  let items = Subscription::select().fetch_all(db).await?;
-  Ok(items)
+  query::<Subscription>(state).await
 }
 
 /// 查询订阅数量
 #[tauri::command]
 #[specta::specta]
 pub async fn db_count_subscriptions(state: State<'_, DbState>) -> Result<u32> {
-  let mut db_guard = state.db.lock().await;
-  let db = db_guard.as_mut().expect("Database not intialized");
-
-  let row = ormlite::query("SELECT COUNT(*) FROM subscription")
-    .fetch_one(db)
-    .await?;
-  let count = row.try_get::<u32, usize>(0)?;
-  Ok(count)
+  count::<Subscription>(state).await
 }

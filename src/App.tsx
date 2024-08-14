@@ -5,8 +5,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { dbSetSettings } from './api/bindings';
-import settings from './api/settings';
 import { updateSubscriptions } from './api/subscription';
 import useStats from './api/useStats';
 import useSubscribe from './api/useSubscribe';
@@ -57,10 +55,7 @@ function App() {
 
   const stats = useStats();
 
-  React.useEffect(() => {
-    const s = settings.get();
-    dbSetSettings(s);
-  }, []);
+  React.useEffect(() => {}, []);
 
   useListenDbChange();
 

@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { info, warn } from 'tauri-plugin-log-api';
 import db from '../../db';
 import type Endpoint from '../../db/endpoint';
-import settings from '../settings';
+import { getSettings } from '../settings';
 import type ConfigObject from './config';
 import type InboundObject from './config/inbound';
 import type OutboundObject from './config/outbound';
@@ -55,7 +55,7 @@ const getInbounds = async (forTest: boolean) => {
   } else {
     // 正常用，生成 socks、http 和 API 入站
     // 用户配置
-    const us = settings.get();
+    const us = getSettings();
     inbounds.push(
       {
         tag: 'socks',

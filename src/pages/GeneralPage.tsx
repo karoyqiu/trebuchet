@@ -47,7 +47,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ socksPort: value });
+            await updateSettings({ socksPort: value });
             await selectFastest(true);
           }
         }}
@@ -67,7 +67,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ httpPort: value });
+            await updateSettings({ httpPort: value });
             await selectFastest(true);
           }
         }}
@@ -83,7 +83,7 @@ export default function GeneralPage() {
           className="toggle toggle-success"
           checked={!!settings.allowLan}
           onChange={async (event) => {
-            updateSettings({ allowLan: event.target.checked });
+            await updateSettings({ allowLan: event.target.checked });
             await selectFastest(true);
           }}
         />
@@ -101,7 +101,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ subUpdateInterval: value });
+            await updateSettings({ subUpdateInterval: value });
           }
         }}
       >
@@ -120,7 +120,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ epTestInterval: value });
+            await updateSettings({ epTestInterval: value });
           }
         }}
       >
@@ -139,7 +139,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ epTestConcurrency: value });
+            await updateSettings({ epTestConcurrency: value });
           }
         }}
       >
@@ -159,9 +159,9 @@ export default function GeneralPage() {
       <WebsiteSelectDialog
         ref={websiteRef}
         url={settings.epTestUrl}
-        onClose={(value) => {
+        onClose={async (value) => {
           if (value) {
-            updateSettings({ epTestUrl: value });
+            await updateSettings({ epTestUrl: value });
           }
         }}
       />

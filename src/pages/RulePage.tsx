@@ -6,7 +6,7 @@ export default function RulePage() {
   const settings = useSettings();
 
   const changeRule = async (rule: RuleType) => {
-    updateSettings({ rule });
+    await updateSettings({ rule });
 
     const cur = current.get();
 

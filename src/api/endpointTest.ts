@@ -4,7 +4,7 @@ import { debug, error } from 'tauri-plugin-log-api';
 import db from '../db';
 import Endpoint from '../db/endpoint';
 import SimpleQueue from './SimpleQueue';
-import settings, { getSettings } from './settings';
+import { getSettings } from './settings';
 import Xray from './xray/xray';
 
 export const testLatency = async (proxyPort: number, url: string) => {
@@ -55,7 +55,7 @@ export const testLatencies = async (eps: Endpoint[], concurrency?: number) => {
   };
 
   // 这里一个一个地启动，因为每次都要找一个未使用的端口
-  const limit = concurrency ?? settings.get().epTestConcurrency;
+  const limit = concurrency ?? getSettings().epTestConcurrency;
 
   for (const ep of eps) {
     await xrays.waitForAvailable(limit);

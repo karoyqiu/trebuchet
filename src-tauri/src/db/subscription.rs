@@ -92,6 +92,7 @@ impl Subscription {
           .name(ep.name)
           .host(ep.host)
           .port(ep.port)
+          .outbound(ep.outbound)
           .insert(&mut *db)
           .await?;
       }

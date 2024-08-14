@@ -74,6 +74,27 @@ export function dbUpdateSubscription(doc: Subscription) {
 }
 
 /**
+ * 获取可用于侦听的 TCP 端口
+ */
+export function getAvailablePort() {
+    return invoke()<number>("get_available_port")
+}
+
+/**
+ * 测试全部节点的连接速度
+ */
+export function testLatencies() {
+    return invoke()<null>("test_latencies")
+}
+
+/**
+ * 测试单个节点的连接速度
+ */
+export function testLatency(epId: number) {
+    return invoke()<null>("test_latency", { epId })
+}
+
+/**
  * 更新单个订阅
  */
 export function updateSubscription(subId: number) {
@@ -88,6 +109,10 @@ export function updateSubscriptions() {
 }
 
 /**
+ * 节点
+ */
+export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }
+/**
  * 订阅分组
  */
 export type Subscription = { id: number; name: string; url: string; disabled: boolean | null }
@@ -95,7 +120,3 @@ export type Subscription = { id: number; name: string; url: string; disabled: bo
  * 设置
  */
 export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
-/**
- * 节点
- */
-export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }

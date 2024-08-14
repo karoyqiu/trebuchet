@@ -10,7 +10,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.4", features = [] }
+tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
 anyhow = "1.0.75"
@@ -22,7 +22,7 @@ scopeguard = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 specta = "1.0.5"
-tauri = { version = "1.4", features = ["cli", "fs-remove-file", "fs-write-file", "os-all", "path-all", "shell-sidecar", "system-tray", "window-show"] }
+tauri = { version = "1.7", features = ["cli", "fs-remove-file", "fs-write-file", "os-all", "path-all", "shell-sidecar", "system-tray", "window-show"] }
 tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }

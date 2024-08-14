@@ -10,13 +10,12 @@ mod xray;
 
 use std::{
   fs,
-  net::TcpListener,
   sync::Arc,
   time::{Duration, Instant},
 };
 
 use app_handle::set_app_handle;
-use command::update_subscriptions;
+use command::{get_available_port, update_subscriptions};
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
   db_query_endpoints, db_query_subscriptions, db_remove_subscription, db_set_settings,
@@ -55,14 +54,6 @@ async fn download_resource(app: AppHandle, url: &str, filename: &str) -> Result<
   } else {
     Err(map_anything("No app data dir"))
   }
-}
-
-/// 获取可用于侦听的 TCP 端口。
-#[tauri::command]
-fn get_available_port() -> Result<u16> {
-  let listener = TcpListener::bind("127.0.0.1:0")?;
-  let addr = listener.local_addr()?;
-  Ok(addr.port())
 }
 
 /// 测试指定代理的延迟，结果为毫秒。

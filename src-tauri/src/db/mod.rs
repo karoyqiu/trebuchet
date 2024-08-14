@@ -4,6 +4,7 @@ pub mod subscription;
 
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use endpoint::Endpoint;
 use log::debug;
 use ormlite::{
@@ -18,7 +19,10 @@ use settings::{Settings, SettingsTable};
 use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
 
-use crate::error::Result;
+use crate::{
+  app_handle::get_app_handle,
+  error::{Error, Result},
+};
 
 const CURRENT_DB_VERSION: u32 = 2;
 
@@ -70,7 +74,7 @@ async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
     db.execute(sql.as_str()).await?;
 
     let sql = format!(
-      "CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, sub_id INTEGER NOT NULL REFERENCES {}(id) ON DELETE CASCADE ON UPDATE CASCADE, uri TEXT NOT NULL, name TEXT NOT NULL, host TEXT NOT NULL, port INTEGER NOT NULL, latency INTEGER)",
+      "CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, sub_id INTEGER NOT NULL REFERENCES {}(id) ON DELETE CASCADE ON UPDATE CASCADE, uri TEXT NOT NULL, name TEXT NOT NULL, host TEXT NOT NULL, port INTEGER NOT NULL, latency INTEGER, outbound TEXT)",
       Endpoint::table_name(),
       Endpoint::primary_key().unwrap(),
       Subscription::table_name(),
@@ -197,6 +201,16 @@ pub async fn db_get_settings(state: State<'_, DbState>) -> Result<Settings> {
   .await?;
 
   Ok(settings)
+}
+
+/// 获取设置
+pub async fn get_settings() -> Result<Settings> {
+  if let Some(app) = get_app_handle() {
+    let state: State<DbState> = app.state();
+    db_get_settings(state).await
+  } else {
+    Err(Error::Anyhow(anyhow!("No app handle")))
+  }
 }
 
 /// 保存设置

@@ -91,4 +91,4 @@ export type Settings = { socksPort: number; httpPort: number; allowLan: boolean;
 /**
  * 节点
  */
-export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null }
+export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }

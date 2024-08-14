@@ -3,7 +3,8 @@ use std::{collections::HashMap, path::Path};
 use anyhow::anyhow;
 use log::warn;
 use serde_json::{json, Value};
-use tauri::api::process::{Command, CommandChild, Encoding};
+use tauri::api::process::{Command, CommandChild, CommandEvent, Encoding};
+use tokio::sync::mpsc::Receiver;
 
 use crate::{
   app_handle::get_app_handle,
@@ -20,6 +21,7 @@ pub struct Xray {
   filename: Option<String>,
   /// xray 命令
   child: Option<CommandChild>,
+  rx: Option<Receiver<CommandEvent>>,
   /// 监听端口
   port: Option<u16>,
 }
@@ -31,6 +33,7 @@ impl Xray {
       ep: endpoint,
       filename: None,
       child: None,
+      rx: None,
       port: None,
     }
   }
@@ -41,7 +44,7 @@ impl Xray {
   }
 
   /// 启动 xray
-  async fn start(&mut self, rule: &str) -> Result<()> {
+  pub async fn start(&mut self, rule: &str) -> Result<()> {
     if self.child.is_some() {
       warn!("Xray for {} is already started", self.ep.name);
       return Ok(());
@@ -65,9 +68,10 @@ impl Xray {
         )]))
         .encoding(Encoding::for_label(b"utf-8").unwrap());
 
-      let (_rx, child) = cmd.spawn()?;
+      let (rx, child) = cmd.spawn()?;
       self.filename = Some(filename);
       self.child = Some(child);
+      self.rx = Some(rx);
 
       Ok(())
     } else {
@@ -77,9 +81,11 @@ impl Xray {
 
   /// 停止 xray
   pub async fn stop(&mut self) -> Result<()> {
-    let child = self.child.take();
+    if let Some(child) = self.child.take() {
+      if let Some(mut rx) = self.rx.take() {
+        rx.close();
+      }
 
-    if let Some(child) = child {
       child.kill()?;
       tokio::fs::remove_file(self.filename.clone().unwrap()).await?;
 
@@ -88,6 +94,17 @@ impl Xray {
     }
 
     Ok(())
+  }
+
+  /// 等待进程运行
+  pub async fn wait_for_started(&mut self) -> Result<()> {
+    if let Some(mut rx) = self.rx.take() {
+      if let Some(_) = rx.recv().await {
+        return Ok(());
+      }
+    }
+
+    Err(Error::Anyhow(anyhow!("No rx")))
   }
 
   /// 将配置保存为文件

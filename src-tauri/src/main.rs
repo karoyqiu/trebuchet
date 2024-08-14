@@ -15,7 +15,7 @@ use std::{
 };
 
 use app_handle::set_app_handle;
-use command::{get_available_port, update_subscription, update_subscriptions};
+use command::{get_available_port, test_latency, update_subscription, update_subscriptions};
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
   db_query_endpoints, db_query_subscriptions, db_remove_subscription, db_set_settings,
@@ -56,27 +56,27 @@ async fn download_resource(app: AppHandle, url: &str, filename: &str) -> Result<
   }
 }
 
-/// 测试指定代理的延迟，结果为毫秒。
-#[tauri::command]
-async fn test_latency(proxy_port: u16, url: &str, timeout: Option<u64>) -> Result<i32> {
-  let proxy_url = format!("socks5://127.0.0.1:{}", proxy_port);
-  let client = reqwest::Client::builder()
-    .timeout(Duration::new(timeout.unwrap_or(10), 0))
-    .proxy(reqwest::Proxy::all(proxy_url)?)
-    .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0")
-    .build()?;
+// /// 测试指定代理的延迟，结果为毫秒。
+// #[tauri::command]
+// async fn test_latency(proxy_port: u16, url: &str, timeout: Option<u64>) -> Result<i32> {
+//   let proxy_url = format!("socks5://127.0.0.1:{}", proxy_port);
+//   let client = reqwest::Client::builder()
+//     .timeout(Duration::new(timeout.unwrap_or(10), 0))
+//     .proxy(reqwest::Proxy::all(proxy_url)?)
+//     .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0")
+//     .build()?;
 
-  let now = Instant::now();
-  let status = client.head(url).send().await?.status();
-  let elapsed = now.elapsed().as_millis() as i32;
+//   let now = Instant::now();
+//   let status = client.head(url).send().await?.status();
+//   let elapsed = now.elapsed().as_millis() as i32;
 
-  if status.is_success() {
-    Ok(elapsed)
-  } else {
-    // 999999 表示超时或失败
-    Ok(999999)
-  }
-}
+//   if status.is_success() {
+//     Ok(elapsed)
+//   } else {
+//     // 999999 表示超时或失败
+//     Ok(999999)
+//   }
+// }
 
 /// 如果指定的资源文件在目标目录中不存在，则复制一份。
 fn copy_resource_if_not_exists(app: &App, filename: &str) -> Result<()> {
@@ -255,7 +255,8 @@ fn main() {
       // 更新订阅
       let handle = app.handle();
       tauri::async_runtime::spawn(async move {
-        let _ = update_subscriptions(handle).await;
+        let state: State<DbState> = handle.state();
+        let _ = update_subscriptions(state).await;
       });
 
       Ok(())

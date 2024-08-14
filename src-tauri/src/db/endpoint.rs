@@ -9,7 +9,7 @@ use thiserror::Error;
 use uri_parser::{parse_uri, URI};
 
 /// 节点
-#[derive(Debug, Deserialize, Serialize, Type, Model)]
+#[derive(Clone, Debug, Deserialize, Serialize, Type, Model)]
 #[serde(rename_all = "camelCase")]
 pub struct Endpoint {
   /// 节点 ID

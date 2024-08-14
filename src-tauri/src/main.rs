@@ -8,14 +8,12 @@ mod error;
 mod query_stats;
 mod xray;
 
-use std::{
-  fs,
-  sync::Arc,
-  time::{Duration, Instant},
-};
+use std::{fs, sync::Arc};
 
 use app_handle::set_app_handle;
-use command::{get_available_port, test_latency, update_subscription, update_subscriptions};
+use command::{
+  get_available_port, test_latencies, test_latency, update_subscription, update_subscriptions,
+};
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
   db_query_endpoints, db_query_subscriptions, db_remove_subscription, db_set_settings,
@@ -129,6 +127,9 @@ fn export_bindings() {
       db_remove_subscription,
       db_set_settings,
       db_update_subscription,
+      get_available_port,
+      test_latencies,
+      test_latency,
       update_subscription,
       update_subscriptions,
     ]
@@ -271,12 +272,13 @@ fn main() {
       db_remove_subscription,
       db_set_settings,
       db_update_subscription,
+      get_available_port,
+      test_latencies,
+      test_latency,
       update_subscription,
       update_subscriptions,
       download,
       download_resource,
-      get_available_port,
-      test_latency,
       query_stats,
       query_sys,
     ])

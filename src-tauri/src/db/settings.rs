@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 /// 设置
-#[derive(Debug, Clone, Deserialize, Serialize, Type)]
+#[derive(Clone, Debug, Deserialize, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
   /// SOCKS 侦听端口

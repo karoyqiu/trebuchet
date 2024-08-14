@@ -66,8 +66,8 @@ export function updateSubscriptions() {
     return invoke()<null>("update_subscriptions")
 }
 
-export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
 /**
  * 订阅分组
  */
 export type Subscription = { id: number; name: string; url: string; disabled: boolean | null }
+export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }

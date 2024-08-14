@@ -15,9 +15,13 @@ pub async fn update_subscriptions(app: AppHandle) -> Result<()> {
   let mut set = JoinSet::new();
 
   for sub in subs {
-    set.spawn(async move {
-      let _ = sub.update().await;
-    });
+    let disabled = sub.disabled.unwrap_or(false);
+
+    if !disabled {
+      set.spawn(async move {
+        let _ = sub.update().await;
+      });
+    }
   }
 
   while let Some(_) = set.join_next().await {}

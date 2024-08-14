@@ -12,6 +12,7 @@ use uri_parser::{parse_uri, URI};
 #[serde(rename_all = "camelCase")]
 pub struct Endpoint {
   /// 节点 ID
+  #[ormlite(primary_key)]
   pub id: i64,
   /// 订阅分组 ID
   pub sub_id: i64,
@@ -23,22 +24,8 @@ pub struct Endpoint {
   pub host: String,
   /// 端口
   pub port: u16,
-  /// 加密方式
-  pub cipher: Option<String>,
-  /// 传输协议
-  pub transport: Option<String>,
   /// 延迟，毫秒；-1 表示正在测试
   pub latency: Option<i32>,
-  /// 速度，字节/秒
-  pub speed: Option<i64>,
-  /// 今日上传流量，字节
-  pub upload: Option<i64>,
-  /// 今日下载流量，字节
-  pub download: Option<i64>,
-  /// 总上传流量，字节
-  pub total_upload: Option<i64>,
-  /// 总下载流量，字节
-  pub total_download: Option<i64>,
 }
 
 #[derive(Debug, Error)]
@@ -55,8 +42,6 @@ pub enum ParseEndpointError {
   UnsupportedProtocol,
   #[error("utf8 error")]
   FromUtf8Error(#[from] std::string::FromUtf8Error),
-  #[error("unknown parse endpoint error")]
-  Unknown,
 }
 
 /// VMess 协议参数
@@ -83,6 +68,7 @@ pub struct VMessParams {
 impl Endpoint {
   /// 从 vmess URI 构建节点结构
   fn from_vmess(uri: &str) -> Result<Self, ParseEndpointError> {
+    let full = String::from(uri);
     let uri = &uri[8..];
     let params = BASE64_STANDARD.decode(uri)?;
     let params: VMessParams = serde_json::from_slice(&params)?;
@@ -90,18 +76,11 @@ impl Endpoint {
     Ok(Endpoint {
       id: 0,
       sub_id: 0,
-      uri: String::from(uri),
+      uri: full,
       name: params.ps,
       host: params.add,
       port: params.port.parse::<u16>()?,
-      cipher: params.scy,
-      transport: params.net,
       latency: None,
-      speed: None,
-      upload: None,
-      download: None,
-      total_upload: None,
-      total_download: None,
     })
   }
 
@@ -114,14 +93,7 @@ impl Endpoint {
       name: urlencoding::decode(uri.hash.unwrap_or_default())?.into(),
       host: String::from(uri.host.unwrap_or_default()),
       port: uri.port.unwrap_or_default(),
-      cipher: None,
-      transport: None,
       latency: None,
-      speed: None,
-      upload: None,
-      download: None,
-      total_upload: None,
-      total_download: None,
     })
   }
 }

@@ -4,6 +4,7 @@ pub mod subscription;
 
 use std::sync::Arc;
 
+use endpoint::Endpoint;
 use log::debug;
 use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
@@ -65,6 +66,20 @@ async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
       "CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, settings TEXT NOT NULL)",
       SettingsTable::table_name(),
       SettingsTable::primary_key().unwrap()
+    );
+    db.execute(sql.as_str()).await?;
+
+    let sql = format!(
+      "CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, sub_id INTEGER NOT NULL REFERENCES {}(id) ON DELETE CASCADE ON UPDATE CASCADE, uri TEXT NOT NULL, name TEXT NOT NULL, host TEXT NOT NULL, port INTEGER NOT NULL, latency INTEGER)",
+      Endpoint::table_name(),
+      Endpoint::primary_key().unwrap(),
+      Subscription::table_name(),
+    );
+    db.execute(sql.as_str()).await?;
+
+    let sql = format!(
+      "CREATE UNIQUE INDEX IF NOT EXISTS unique_endpoint ON {} (host, port)",
+      Endpoint::table_name()
     );
     db.execute(sql.as_str()).await?;
 

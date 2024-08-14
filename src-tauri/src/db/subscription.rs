@@ -1,14 +1,27 @@
 use std::{
   collections::HashSet,
+  str::FromStr,
   sync::{LazyLock, RwLock},
 };
 
+use anyhow::anyhow;
+use base64::{prelude::BASE64_STANDARD, Engine};
 use log::debug;
-use ormlite::Model;
+use ormlite::{
+  model::{HasModelBuilder, ModelBuilder},
+  Model,
+};
+use scopeguard::defer;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use tauri::{Manager, State};
 
-use crate::error::Result;
+use crate::{
+  app_handle::get_app_handle,
+  error::{Error, Result},
+};
+
+use super::{endpoint::Endpoint, DbState};
 
 static UPDATING_ONES: LazyLock<RwLock<HashSet<i64>>> =
   LazyLock::new(|| RwLock::new(HashSet::new()));
@@ -35,10 +48,57 @@ impl Subscription {
       return Ok(());
     }
 
-    self.set_updating(true);
+    let app = get_app_handle();
 
-    self.set_updating(false);
-    Ok(())
+    if let Some(app) = app {
+      self.set_updating(true);
+
+      defer! {
+        self.set_updating(false);
+      }
+
+      // 下载订阅
+      let body = reqwest::get(&self.url).await?.text().await?;
+      // base64 解码
+      let body = BASE64_STANDARD.decode(body)?;
+      let body = String::from_utf8(body)?;
+
+      // 按行分割
+      let lines = body.split("\n");
+
+      let state: State<DbState> = app.state();
+      let mut db_guard = state.db.lock().await;
+      let db = db_guard.as_mut().expect("Database not intialized");
+
+      // 删除原有的
+      ormlite::query("DELETE FROM endpoint WHERE sub_id = ?")
+        .bind(self.id)
+        .fetch_optional(&mut *db)
+        .await?;
+
+      // 插入新的
+      for line in lines {
+        let line = line.trim();
+
+        if line.is_empty() {
+          continue;
+        }
+
+        let ep = Endpoint::from_str(line)?;
+        Endpoint::builder()
+          .sub_id(self.id)
+          .uri(ep.uri)
+          .name(ep.name)
+          .host(ep.host)
+          .port(ep.port)
+          .insert(&mut *db)
+          .await?;
+      }
+
+      Ok(())
+    } else {
+      Err(Error::Anyhow(anyhow!("No app handle")))
+    }
   }
 
   /// 检查是否正在更新

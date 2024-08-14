@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod app_handle;
 mod command;
 mod db;
 mod error;
@@ -14,6 +15,7 @@ use std::{
   time::{Duration, Instant},
 };
 
+use app_handle::set_app_handle;
 use command::update_subscriptions;
 use db::{
   db_count_subscriptions, db_get_settings, db_insert_subscription, db_query_subscriptions,
@@ -117,12 +119,12 @@ fn export_bindings() {
   //use db::settings::Settings;
   use specta::{
     collect_types,
-    ts::{export, BigIntExportBehavior, ExportConfiguration},
+    ts::{BigIntExportBehavior, ExportConfiguration},
   };
 
   let config = ExportConfiguration::new().bigint(BigIntExportBehavior::Number);
 
-  //println!("{}", export::<Settings>(&config).unwrap());
+  //println!("{}", specta::ts::export::<Settings>(&config).unwrap());
 
   tauri_specta::ts::export_with_cfg(
     collect_types![
@@ -246,12 +248,19 @@ fn main() {
 
       // 连接数据库
       let handle = app.handle();
+      set_app_handle(&handle);
 
       tauri::async_runtime::block_on(async move {
         let state: State<DbState> = handle.state();
         let db = initialize(&handle, false).await.unwrap();
         let mut db_guard = state.db.lock().await;
         *db_guard = Some(db);
+      });
+
+      // 更新订阅
+      let handle = app.handle();
+      tauri::async_runtime::spawn(async move {
+        let _ = update_subscriptions(handle).await;
       });
 
       Ok(())

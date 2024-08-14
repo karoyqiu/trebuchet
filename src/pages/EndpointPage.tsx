@@ -1,8 +1,5 @@
 import NetworkCheckIcon from '@material-symbols/svg-400/outlined/network_check.svg?react';
-import { selectFastest } from '../api/currentEndpoint';
-import { testLatencies } from '../api/endpointTest';
 import EndpointList from '../components/EndpointList';
-import db from '../db';
 
 export default function EndpointPage() {
   return (
@@ -11,10 +8,11 @@ export default function EndpointPage() {
         <button
           className="btn btn-ghost join-item"
           onClick={async () => {
-            const all = await db.endpoints.toArray();
-            await testLatencies(all);
-            await selectFastest();
+            // const all = await db.endpoints.toArray();
+            // await testLatencies(all);
+            // await selectFastest();
           }}
+          disabled
         >
           <NetworkCheckIcon />
           Test speed

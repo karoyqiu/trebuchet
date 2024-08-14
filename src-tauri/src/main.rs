@@ -18,8 +18,9 @@ use std::{
 use app_handle::set_app_handle;
 use command::update_subscriptions;
 use db::{
-  db_count_subscriptions, db_get_settings, db_insert_subscription, db_query_subscriptions,
-  db_remove_subscription, db_set_settings, db_update_subscription, initialize, DbState,
+  db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
+  db_query_endpoints, db_query_subscriptions, db_remove_subscription, db_set_settings,
+  db_update_subscription, initialize, DbState,
 };
 use error::{map_any_error, map_anything, Result};
 use log::LevelFilter;
@@ -128,9 +129,11 @@ fn export_bindings() {
 
   tauri_specta::ts::export_with_cfg(
     collect_types![
+      db_count_endpoints,
       db_count_subscriptions,
       db_get_settings,
       db_insert_subscription,
+      db_query_endpoints,
       db_query_subscriptions,
       db_remove_subscription,
       db_set_settings,
@@ -266,20 +269,22 @@ fn main() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+      db_count_endpoints,
       db_count_subscriptions,
       db_get_settings,
       db_insert_subscription,
+      db_query_endpoints,
       db_query_subscriptions,
       db_remove_subscription,
       db_set_settings,
       db_update_subscription,
+      update_subscriptions,
       download,
       download_resource,
       get_available_port,
       test_latency,
       query_stats,
       query_sys,
-      update_subscriptions,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

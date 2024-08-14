@@ -18,6 +18,7 @@ use tauri::{Manager, State};
 
 use crate::{
   app_handle::get_app_handle,
+  db::notify_change,
   error::{Error, Result},
 };
 
@@ -94,6 +95,8 @@ impl Subscription {
           .insert(&mut *db)
           .await?;
       }
+
+      notify_change::<Endpoint>(&app)?;
 
       Ok(())
     } else {

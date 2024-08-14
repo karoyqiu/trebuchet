@@ -2,6 +2,7 @@ use ormlite::{types::Json, Model};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+/// 设置
 #[derive(Debug, Clone, Deserialize, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {

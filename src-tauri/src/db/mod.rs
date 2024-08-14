@@ -91,7 +91,7 @@ async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
 }
 
 /// 通知数据库变动
-fn notify_change<T>(app: &AppHandle) -> Result<()>
+pub fn notify_change<T>(app: &AppHandle) -> Result<()>
 where
   T: TableMeta,
 {
@@ -101,7 +101,7 @@ where
 }
 
 /// 更新
-async fn update<T>(app: &AppHandle, doc: T) -> Result<bool>
+async fn update<T>(app: &AppHandle, doc: T) -> Result<()>
 where
   T: Model<Sqlite> + TableMeta + Send,
 {
@@ -114,11 +114,11 @@ where
   // 通知数据库变动
   notify_change::<T>(&app)?;
 
-  Ok(true)
+  Ok(())
 }
 
 /// 删除
-async fn remove<T>(app: &AppHandle, id: i64) -> Result<bool>
+async fn remove<T>(app: &AppHandle, id: i64) -> Result<()>
 where
   T: Model<Sqlite> + TableMeta + Send,
 {
@@ -135,7 +135,7 @@ where
   // 通知数据库变动
   notify_change::<T>(&app)?;
 
-  Ok(true)
+  Ok(())
 }
 
 /// 查询
@@ -162,54 +162,6 @@ where
   let row = ormlite::query(sql.as_str()).fetch_one(db).await?;
   let count = row.try_get::<u32, usize>(0)?;
   Ok(count)
-}
-
-/// 插入订阅
-#[tauri::command]
-#[specta::specta]
-pub async fn db_insert_subscription(app: AppHandle, doc: Subscription) -> Result<bool> {
-  let state: State<DbState> = app.state();
-  let mut db_guard = state.db.lock().await;
-  let db = db_guard.as_mut().expect("Database not intialized");
-
-  Subscription::builder()
-    .name(doc.name)
-    .url(doc.url)
-    .insert(db)
-    .await?;
-
-  // 通知数据库变动
-  notify_change::<Subscription>(&app)?;
-
-  Ok(true)
-}
-
-/// 删除订阅
-#[tauri::command]
-#[specta::specta]
-pub async fn db_remove_subscription(app: AppHandle, id: i64) -> Result<bool> {
-  remove::<Subscription>(&app, id).await
-}
-
-/// 更新订阅
-#[tauri::command]
-#[specta::specta]
-pub async fn db_update_subscription(app: AppHandle, doc: Subscription) -> Result<bool> {
-  update(&app, doc).await
-}
-
-/// 查询订阅
-#[tauri::command]
-#[specta::specta]
-pub async fn db_query_subscriptions(state: State<'_, DbState>) -> Result<Vec<Subscription>> {
-  query::<Subscription>(&state).await
-}
-
-/// 查询订阅数量
-#[tauri::command]
-#[specta::specta]
-pub async fn db_count_subscriptions(state: State<'_, DbState>) -> Result<u32> {
-  count::<Subscription>(&state).await
 }
 
 /// 获取设置
@@ -264,4 +216,82 @@ pub async fn db_set_settings(state: State<'_, DbState>, settings: Settings) -> R
   }
 
   Ok(())
+}
+
+/// 插入订阅
+#[tauri::command]
+#[specta::specta]
+pub async fn db_insert_subscription(app: AppHandle, doc: Subscription) -> Result<()> {
+  let state: State<DbState> = app.state();
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  Subscription::builder()
+    .name(doc.name)
+    .url(doc.url)
+    .insert(db)
+    .await?;
+
+  // 通知数据库变动
+  notify_change::<Subscription>(&app)?;
+
+  Ok(())
+}
+
+/// 删除订阅
+#[tauri::command]
+#[specta::specta]
+pub async fn db_remove_subscription(app: AppHandle, id: i64) -> Result<()> {
+  remove::<Subscription>(&app, id).await
+}
+
+/// 更新订阅
+#[tauri::command]
+#[specta::specta]
+pub async fn db_update_subscription(app: AppHandle, doc: Subscription) -> Result<()> {
+  let sub_id = doc.id;
+  let disabled = doc.disabled.unwrap_or_default();
+  let result = update(&app, doc).await;
+
+  if result.is_ok() && disabled {
+    // 禁用的全部删除
+    let state: State<DbState> = app.state();
+    let mut db_guard = state.db.lock().await;
+    let db = db_guard.as_mut().expect("Database not intialized");
+
+    ormlite::query("DELETE FROM endpoint WHERE sub_id = ?")
+      .bind(sub_id)
+      .fetch_optional(db)
+      .await?;
+  }
+
+  result
+}
+
+/// 查询订阅
+#[tauri::command]
+#[specta::specta]
+pub async fn db_query_subscriptions(state: State<'_, DbState>) -> Result<Vec<Subscription>> {
+  query::<Subscription>(&state).await
+}
+
+/// 查询订阅数量
+#[tauri::command]
+#[specta::specta]
+pub async fn db_count_subscriptions(state: State<'_, DbState>) -> Result<u32> {
+  count::<Subscription>(&state).await
+}
+
+/// 查询节点
+#[tauri::command]
+#[specta::specta]
+pub async fn db_query_endpoints(state: State<'_, DbState>) -> Result<Vec<Endpoint>> {
+  query::<Endpoint>(&state).await
+}
+
+/// 查询节点数量
+#[tauri::command]
+#[specta::specta]
+pub async fn db_count_endpoints(state: State<'_, DbState>) -> Result<u32> {
+  count::<Endpoint>(&state).await
 }

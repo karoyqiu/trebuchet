@@ -1,7 +1,6 @@
 import { getMatches } from '@tauri-apps/api/cli';
 import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
@@ -13,8 +12,8 @@ import ConnectionState from './components/ConnectionState';
 import InputBoxProvider from './components/InputBoxProvider';
 import LinkMenuItem from './components/LinkMenuItem';
 import Speedometer from './components/Speedometer';
-import db from './db';
-import { subscriptionsCount } from './db/subscription';
+import { endpointCount } from './db/endpoint';
+import { subscriptionCount } from './db/subscription';
 import useListenDbChange from './db/useListenDbChange';
 
 // 更新 geoip.dat & geosite.dat
@@ -32,8 +31,8 @@ const updateGeosites = async () => {
 };
 
 function App() {
-  const epCount = useLiveQuery(() => db.endpoints.count(), []);
-  const subCount = subscriptionsCount.use() ?? 0;
+  const epCount = endpointCount.use() ?? 0;
+  const subCount = subscriptionCount.use() ?? 0;
 
   // 加载完成之后再显示窗口
   React.useEffect(() => {

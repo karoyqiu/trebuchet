@@ -11,6 +11,13 @@ declare global {
 const invoke = () => window.__TAURI_INVOKE__;
 
 /**
+ * 查询节点数量
+ */
+export function dbCountEndpoints() {
+    return invoke()<number>("db_count_endpoints")
+}
+
+/**
  * 查询订阅数量
  */
 export function dbCountSubscriptions() {
@@ -28,7 +35,14 @@ export function dbGetSettings() {
  * 插入订阅
  */
 export function dbInsertSubscription(doc: Subscription) {
-    return invoke()<boolean>("db_insert_subscription", { doc })
+    return invoke()<null>("db_insert_subscription", { doc })
+}
+
+/**
+ * 查询节点
+ */
+export function dbQueryEndpoints() {
+    return invoke()<Endpoint[]>("db_query_endpoints")
 }
 
 /**
@@ -42,7 +56,7 @@ export function dbQuerySubscriptions() {
  * 删除订阅
  */
 export function dbRemoveSubscription(id: number) {
-    return invoke()<boolean>("db_remove_subscription", { id })
+    return invoke()<null>("db_remove_subscription", { id })
 }
 
 /**
@@ -56,7 +70,7 @@ export function dbSetSettings(settings: Settings) {
  * 更新订阅
  */
 export function dbUpdateSubscription(doc: Subscription) {
-    return invoke()<boolean>("db_update_subscription", { doc })
+    return invoke()<null>("db_update_subscription", { doc })
 }
 
 /**
@@ -70,4 +84,11 @@ export function updateSubscriptions() {
  * 订阅分组
  */
 export type Subscription = { id: number; name: string; url: string; disabled: boolean | null }
+/**
+ * 设置
+ */
 export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
+/**
+ * 节点
+ */
+export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null }

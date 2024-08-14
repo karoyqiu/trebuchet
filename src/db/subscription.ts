@@ -10,10 +10,10 @@ export const subscriptionSchema = object({
 });
 
 export const subscriptions = entity(dbQuerySubscriptions());
-export const subscriptionsCount = entity(dbCountSubscriptions());
+export const subscriptionCount = entity(dbCountSubscriptions());
 
 export const reloadSubscriptions = async () => {
   const [items, count] = await Promise.all([dbQuerySubscriptions(), dbCountSubscriptions()]);
   subscriptions.set(items);
-  subscriptionsCount.set(count);
+  subscriptionCount.set(count);
 };

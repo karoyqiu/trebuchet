@@ -15,7 +15,7 @@ pub async fn update_subscriptions(app: AppHandle) -> Result<()> {
   let mut set = JoinSet::new();
 
   for sub in subs {
-    let disabled = sub.disabled.unwrap_or(false);
+    let disabled = sub.disabled.unwrap_or_default();
 
     if !disabled {
       set.spawn(async move {

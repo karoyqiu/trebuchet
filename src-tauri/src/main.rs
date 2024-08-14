@@ -15,7 +15,7 @@ use std::{
 };
 
 use app_handle::set_app_handle;
-use command::{get_available_port, update_subscriptions};
+use command::{get_available_port, update_subscription, update_subscriptions};
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
   db_query_endpoints, db_query_subscriptions, db_remove_subscription, db_set_settings,
@@ -129,6 +129,7 @@ fn export_bindings() {
       db_remove_subscription,
       db_set_settings,
       db_update_subscription,
+      update_subscription,
       update_subscriptions,
     ]
     .unwrap(),
@@ -269,6 +270,7 @@ fn main() {
       db_remove_subscription,
       db_set_settings,
       db_update_subscription,
+      update_subscription,
       update_subscriptions,
       download,
       download_resource,

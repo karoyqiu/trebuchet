@@ -74,7 +74,14 @@ export function dbUpdateSubscription(doc: Subscription) {
 }
 
 /**
- * 更新订阅
+ * 更新单个订阅
+ */
+export function updateSubscription(subId: number) {
+    return invoke()<null>("update_subscription", { subId })
+}
+
+/**
+ * 更新全部订阅
  */
 export function updateSubscriptions() {
     return invoke()<null>("update_subscriptions")

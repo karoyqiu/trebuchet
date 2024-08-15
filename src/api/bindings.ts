@@ -84,7 +84,7 @@ export function getAvailablePort() {
  * 设置当前节点
  */
 export function getCurrentEndpoint() {
-    return invoke()<number>("get_current_endpoint")
+    return invoke()<number | null>("get_current_endpoint")
 }
 
 /**

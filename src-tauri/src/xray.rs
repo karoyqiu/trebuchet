@@ -1,7 +1,7 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::anyhow;
-use log::warn;
+use log::{debug, trace, warn};
 use serde_json::{json, Value};
 use tauri::{
   api::process::{Command, CommandChild, CommandEvent, Encoding},
@@ -62,13 +62,16 @@ impl Xray {
       let resolver = app.path_resolver();
       let data_dir = resolver.app_data_dir().unwrap();
       let mut fullpath = resolver.app_config_dir().unwrap();
+      fullpath.push("config");
       fullpath.push(format!("{}.json", self.ep.id));
-      let filename = fullpath.into_os_string().into_string().unwrap();
+      let filename = fullpath.clone().into_os_string().into_string().unwrap();
 
-      self.save_config_file(rule, &filename).await?;
+      self.save_config_file(rule, &fullpath).await?;
+
+      debug!("Here {}", line!());
 
       // 启动 xray
-      let cmd = Command::new_sidecar("xray/xray")?
+      let cmd = Command::new_sidecar("xray")?
         .args(["-config", filename.as_str()])
         .envs(HashMap::from([(
           String::from("XRAY_LOCATION_ASSET"),
@@ -127,7 +130,7 @@ impl Xray {
   }
 
   /// 将配置保存为文件
-  async fn save_config_file(&mut self, rule: &str, filename: impl AsRef<Path>) -> Result<()> {
+  async fn save_config_file(&mut self, rule: &str, filename: &PathBuf) -> Result<()> {
     // 入站配置
     let (inbounds, port) = get_inbound_objects(rule == "test").await?;
     self.port = Some(port);
@@ -223,13 +226,25 @@ impl Xray {
       "outboundTag": "proxy",
     }));
 
-    let config = json!({
-      "api": {
+    let api = if rule == "test" {
+      json!({
         "tag": "api",
         "services": [
           "StatsService"
         ]
-      },
+      })
+    } else {
+      json!({
+        "tag": "api",
+        "listen": format!("127.0.0.1:{}", port),
+        "services": [
+          "StatsService"
+        ]
+      })
+    };
+
+    let config = json!({
+      "api": api,
       "dns": {
         "hosts": {
           "dns.google": "8.8.8.8",
@@ -366,10 +381,13 @@ fn send_event(app: &Option<AppHandle>, event: CommandEvent) {
   if let Some(ref app) = app {
     match event {
       CommandEvent::Stderr(line) | CommandEvent::Stdout(line) | CommandEvent::Error(line) => {
+        let line = line.trim();
+        //trace!("Xray: {}", line);
         let _ = app.emit_all("app://xray/log", line);
       }
 
       CommandEvent::Terminated(payload) => {
+        trace!("Xray terminated");
         let _ = app.emit_all(
           "app://xray/log",
           format!("Xray terminated: code {}", payload.code.unwrap_or(-1)),

@@ -26,9 +26,9 @@ pub struct XrayState {
 #[tauri::command]
 #[specta::specta]
 pub async fn test_latencies(app: AppHandle) -> Result<()> {
-  info!("Testing latencies for all endpoints");
   let state: State<DbState> = app.state();
   let eps = db_query_endpoints(state).await?;
+  info!("Testing latencies for all {} endpoints", eps.len());
 
   let settings = get_settings(&app).await?;
   let sem = Arc::new(Semaphore::new(settings.ep_test_concurrency as usize));
@@ -39,10 +39,11 @@ pub async fn test_latencies(app: AppHandle) -> Result<()> {
     let settings = settings.clone();
     tauri::async_runtime::spawn(async move {
       let _permit = permit;
-      let _ = test_endpoint(&app, &ep, &settings).await;
+      test_endpoint(&app, &ep, &settings).await.unwrap();
     });
   }
 
+  info!("All endpoints tested");
   Ok(())
 }
 
@@ -60,10 +61,13 @@ pub async fn test_latency(app: AppHandle, ep_id: i64) -> Result<()> {
 /// 设置当前节点
 #[tauri::command]
 #[specta::specta]
-pub async fn get_current_endpoint(state: State<'_, XrayState>) -> Result<i64> {
+pub async fn get_current_endpoint(state: State<'_, XrayState>) -> Result<Option<i64>> {
   let xray_guard = state.xray.lock().await;
-  let xray = xray_guard.as_ref().expect("No current endpoint");
-  Ok(xray.endpoint().id)
+  if let Some(xray) = xray_guard.as_ref() {
+    Ok(Some(xray.endpoint().id))
+  } else {
+    Ok(None)
+  }
 }
 
 /// 设置当前节点
@@ -113,6 +117,7 @@ pub async fn select_fastest_endpoint(app: AppHandle) -> Result<i64> {
 }
 
 async fn test_endpoint(app: &AppHandle, ep: &Endpoint, settings: &Settings) -> Result<()> {
+  info!("Testing endpoint {} - {}", ep.id, &ep.name);
   let mut xray = Xray::new(ep.clone());
   xray.start("test").await?;
   xray.wait_for_started().await?;

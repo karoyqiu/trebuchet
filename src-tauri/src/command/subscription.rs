@@ -1,16 +1,19 @@
 use log::info;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use tokio::task::JoinSet;
 
-use crate::db::select;
-use crate::db::{db_query_subscriptions, subscription::Subscription, DbState};
-use crate::error::Result;
+use crate::{
+  command::endpoint::select_fastest_endpoint,
+  db::{db_query_subscriptions, select, subscription::Subscription, DbState},
+  error::Result,
+};
 
 /// 更新全部订阅
 #[tauri::command]
 #[specta::specta]
-pub async fn update_subscriptions(state: State<'_, DbState>) -> Result<()> {
+pub async fn update_subscriptions(app: AppHandle) -> Result<()> {
   info!("Updating all subscriptions");
+  let state: State<DbState> = app.state();
   let subs = db_query_subscriptions(state).await?;
   let mut set = JoinSet::new();
 
@@ -25,8 +28,10 @@ pub async fn update_subscriptions(state: State<'_, DbState>) -> Result<()> {
   }
 
   while let Some(_) = set.join_next().await {}
-
   info!("All subscriptions updated");
+
+  select_fastest_endpoint(app).await?;
+
   Ok(())
 }
 

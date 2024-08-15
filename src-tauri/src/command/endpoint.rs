@@ -1,23 +1,32 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use ormlite::model::{HasModelBuilder, ModelBuilder};
-use ormlite::Model;
+use log::info;
+use ormlite::{
+  model::{HasModelBuilder, ModelBuilder},
+  Model,
+};
 use tauri::{AppHandle, Manager, State};
-use tokio::sync::Semaphore;
+use tokio::sync::{Mutex, Semaphore};
 
-use crate::db::settings::Settings;
-use crate::db::{db_query_endpoints, notify_change, select};
-use crate::db::{endpoint::Endpoint, get_settings, DbState};
-use crate::error::Result;
-use crate::xray::Xray;
+use crate::{
+  db::{
+    db_query_endpoints, endpoint::Endpoint, get_settings, notify_change, select,
+    settings::Settings, DbState,
+  },
+  error::Result,
+  xray::Xray,
+};
 
-use super::XrayState;
+pub struct XrayState {
+  pub xray: Arc<Mutex<Option<Xray>>>,
+}
 
 /// 测试全部节点的连接速度
 #[tauri::command]
 #[specta::specta]
 pub async fn test_latencies(app: AppHandle) -> Result<()> {
+  info!("Testing latencies for all endpoints");
   let state: State<DbState> = app.state();
   let eps = db_query_endpoints(state).await?;
 
@@ -41,7 +50,8 @@ pub async fn test_latencies(app: AppHandle) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn test_latency(app: AppHandle, ep_id: i64) -> Result<()> {
-  let ep = select(&app, ep_id).await?;
+  let ep: Endpoint = select(&app, ep_id).await?;
+  info!("Testing latency for endpoint {} - {}", ep.id, &ep.name);
   let settings = get_settings(&app).await?;
   test_endpoint(&app, &ep, &settings).await?;
 
@@ -60,8 +70,9 @@ pub async fn get_current_endpoint(state: State<'_, XrayState>) -> Result<i64> {
 #[tauri::command]
 #[specta::specta]
 pub async fn set_current_endpoint(app: AppHandle, ep_id: i64) -> Result<()> {
-  let ep = select(&app, ep_id).await?;
+  let ep: Endpoint = select(&app, ep_id).await?;
   let settings = get_settings(&app).await?;
+  info!("Set current endpoint {} - {}", ep.id, &ep.name);
 
   let state: State<XrayState> = app.state();
   let mut xray_guard = state.xray.lock().await;
@@ -81,6 +92,7 @@ pub async fn set_current_endpoint(app: AppHandle, ep_id: i64) -> Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub async fn select_fastest_endpoint(app: AppHandle) -> Result<i64> {
+  info!("Selecting fastest endpoint");
   test_latencies(app.clone()).await?;
 
   let ep = {

@@ -6,6 +6,7 @@ mod command;
 mod db;
 mod error;
 mod query_stats;
+mod timers;
 mod xray;
 
 use std::{fs, sync::Arc};
@@ -14,11 +15,10 @@ use app_handle::set_app_handle;
 use command::{
   endpoint::{
     get_current_endpoint, select_fastest_endpoint, set_current_endpoint, test_latencies,
-    test_latency,
+    test_latency, XrayState,
   },
   get_available_port,
   subscription::{update_subscription, update_subscriptions},
-  XrayState,
 };
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
@@ -34,6 +34,7 @@ use tauri::{
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
+use timers::subscription::{start_auto_update_subscriptions, SubTimerState};
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -237,6 +238,7 @@ fn main() {
     .manage(XrayState {
       xray: Arc::new(Mutex::new(None)),
     })
+    .manage(SubTimerState::default())
     .setup(|app| {
       let resolver = app.path_resolver();
 
@@ -268,8 +270,12 @@ fn main() {
       // 更新订阅
       let handle = app.handle();
       tauri::async_runtime::spawn(async move {
-        let state: State<DbState> = handle.state();
-        let _ = update_subscriptions(state).await;
+        let _ = update_subscriptions(handle).await;
+      });
+
+      // 开启计时器
+      tauri::async_runtime::block_on(async {
+        let _ = start_auto_update_subscriptions().await;
       });
 
       Ok(())

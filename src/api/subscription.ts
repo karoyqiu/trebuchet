@@ -5,7 +5,6 @@ import { error, info, warn } from 'tauri-plugin-log-api';
 import { parse as parseUri } from 'uri-js';
 import db from '../db';
 import { Subscription, subscriptions } from '../db/subscription';
-import { selectFastest } from './currentEndpoint';
 import { testLatencies } from './endpointTest';
 import { setSubUpdating, updatingSubs } from './useSubscriptionUpdating';
 import parseShadowsocks from './xray/protocols/shadowsocks';
@@ -123,6 +122,6 @@ export const updateSubscriptions = async () => {
 
   // 更新后自动选择最快的节点
   if (!DEV) {
-    await selectFastest();
+    //await selectFastest();
   }
 };

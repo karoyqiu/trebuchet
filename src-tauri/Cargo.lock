@@ -5025,6 +5025,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-js-set-interval"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1a5c495f1a7d9424b1bf2a4315cb2e542659eb9e9015f3c6aa4660f87d9f086"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "tokio-macros"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5249,6 +5258,7 @@ dependencies = [
  "tauri-specta",
  "thiserror",
  "tokio",
+ "tokio-js-set-interval",
  "uri_parser",
  "urlencoding",
 ]

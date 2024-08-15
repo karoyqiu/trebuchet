@@ -12,7 +12,13 @@ use std::{fs, sync::Arc};
 
 use app_handle::set_app_handle;
 use command::{
-  get_available_port, test_latencies, test_latency, update_subscription, update_subscriptions,
+  endpoint::{
+    get_current_endpoint, select_fastest_endpoint, set_current_endpoint, test_latencies,
+    test_latency,
+  },
+  get_available_port,
+  subscription::{update_subscription, update_subscriptions},
+  XrayState,
 };
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
@@ -128,6 +134,9 @@ fn export_bindings() {
       db_set_settings,
       db_update_subscription,
       get_available_port,
+      get_current_endpoint,
+      select_fastest_endpoint,
+      set_current_endpoint,
       test_latencies,
       test_latency,
       update_subscription,
@@ -225,6 +234,9 @@ fn main() {
     .manage(DbState {
       db: Arc::new(Mutex::new(None)),
     })
+    .manage(XrayState {
+      xray: Arc::new(Mutex::new(None)),
+    })
     .setup(|app| {
       let resolver = app.path_resolver();
 
@@ -273,6 +285,9 @@ fn main() {
       db_set_settings,
       db_update_subscription,
       get_available_port,
+      get_current_endpoint,
+      select_fastest_endpoint,
+      set_current_endpoint,
       test_latencies,
       test_latency,
       update_subscription,

@@ -81,6 +81,27 @@ export function getAvailablePort() {
 }
 
 /**
+ * 设置当前节点
+ */
+export function getCurrentEndpoint() {
+    return invoke()<number>("get_current_endpoint")
+}
+
+/**
+ * 给所有节点测速，并选择最快的节点
+ */
+export function selectFastestEndpoint() {
+    return invoke()<number>("select_fastest_endpoint")
+}
+
+/**
+ * 设置当前节点
+ */
+export function setCurrentEndpoint(epId: number) {
+    return invoke()<null>("set_current_endpoint", { epId })
+}
+
+/**
  * 测试全部节点的连接速度
  */
 export function testLatencies() {

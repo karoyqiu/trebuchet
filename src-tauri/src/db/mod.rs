@@ -4,7 +4,6 @@ pub mod subscription;
 
 use std::sync::Arc;
 
-use anyhow::anyhow;
 use endpoint::Endpoint;
 use log::debug;
 use ormlite::{
@@ -19,10 +18,7 @@ use settings::{Settings, SettingsTable};
 use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
 
-use crate::{
-  app_handle::get_app_handle,
-  error::{Error, Result},
-};
+use crate::error::Result;
 
 const CURRENT_DB_VERSION: u32 = 2;
 
@@ -168,6 +164,19 @@ where
   Ok(count)
 }
 
+/// 按 ID 选择
+pub async fn select<T>(app: &AppHandle, id: i64) -> Result<T>
+where
+  T: Model<Sqlite> + for<'r> FromRow<'r, SqliteRow> + Send + Sync + Unpin + 'static,
+{
+  let state: State<DbState> = app.state();
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  let item = T::select().where_bind("id = ?", id).fetch_one(db).await?;
+  Ok(item)
+}
+
 /// 获取设置
 #[tauri::command]
 #[specta::specta]
@@ -204,13 +213,9 @@ pub async fn db_get_settings(state: State<'_, DbState>) -> Result<Settings> {
 }
 
 /// 获取设置
-pub async fn get_settings() -> Result<Settings> {
-  if let Some(app) = get_app_handle() {
-    let state: State<DbState> = app.state();
-    db_get_settings(state).await
-  } else {
-    Err(Error::Anyhow(anyhow!("No app handle")))
-  }
+pub async fn get_settings(app: &AppHandle) -> Result<Settings> {
+  let state: State<DbState> = app.state();
+  db_get_settings(state).await
 }
 
 /// 保存设置

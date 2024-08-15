@@ -1,4 +1,5 @@
-import { current, setCurrent } from '../api/currentEndpoint';
+import { setCurrentEndpoint } from '../api/bindings';
+import { current } from '../api/currentEndpoint';
 import { endpoints } from '../db/endpoint';
 import { subscriptions } from '../db/subscription';
 import LatencyBadge from './LatencyBadge';
@@ -29,12 +30,8 @@ export default function EndpointList() {
         {items.map((item) => (
           <tr
             key={item.id}
-            className={
-              cur?.host === item.host && cur.port === item.port
-                ? 'bg-accent text-accent-content'
-                : 'hover cursor-pointer'
-            }
-            onClick={() => setCurrent(item)}
+            className={item.id === cur ? 'bg-accent text-accent-content' : 'hover cursor-pointer'}
+            onClick={() => setCurrentEndpoint(item.id)}
           >
             <td className="w-full">
               <p className="text-lg font-bold">{item.name}</p>

@@ -1,8 +1,7 @@
 import AddIcon from '@material-symbols/svg-400/outlined/add.svg?react';
 import UpdateIcon from '@material-symbols/svg-400/outlined/update.svg?react';
 import React from 'react';
-import { dbInsertSubscription } from '../api/bindings';
-import { updateSubscriptions } from '../api/subscription';
+import { dbInsertSubscription, updateSubscriptions } from '../api/bindings';
 import SubscriptionDialog from '../components/SubscriptionDialog';
 import SubscriptionList from '../components/SubscriptionList';
 import { Subscription } from '../db/subscription';

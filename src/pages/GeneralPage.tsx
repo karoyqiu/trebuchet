@@ -2,7 +2,8 @@ import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react';
 import { getVersion } from '@tauri-apps/api/app';
 import React from 'react';
 import { disable, enable, isEnabled } from 'tauri-plugin-autostart-api';
-import { selectFastest } from '../api/currentEndpoint';
+import { selectFastestEndpoint, setCurrentEndpoint, type Settings } from '../api/bindings';
+import { current } from '../api/currentEndpoint';
 import { updateSettings, useSettings } from '../api/settings';
 import useInputBox from '../api/useInputBox';
 import FlowChart from '../components/FlowChart';
@@ -19,6 +20,17 @@ export default function GeneralPage() {
   const prompt = useInputBox();
   const settings = useSettings();
   const websiteRef = React.useRef<HTMLDialogElement>(null);
+  const cur = current.use();
+
+  const updateAndRestart = async (delta: Partial<Settings>) => {
+    await updateSettings(delta);
+
+    if (cur) {
+      await setCurrentEndpoint(cur);
+    } else {
+      await selectFastestEndpoint();
+    }
+  };
 
   React.useEffect(() => {
     getVersion()
@@ -47,8 +59,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            await updateSettings({ socksPort: value });
-            await selectFastest(true);
+            await updateAndRestart({ socksPort: value });
           }
         }}
       >
@@ -67,8 +78,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            await updateSettings({ httpPort: value });
-            await selectFastest(true);
+            await updateAndRestart({ httpPort: value });
           }
         }}
       >
@@ -83,8 +93,7 @@ export default function GeneralPage() {
           className="toggle toggle-success"
           checked={!!settings.allowLan}
           onChange={async (event) => {
-            await updateSettings({ allowLan: event.target.checked });
-            await selectFastest(true);
+            await updateAndRestart({ allowLan: event.target.checked });
           }}
         />
       </label>

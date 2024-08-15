@@ -3,7 +3,10 @@ use std::{collections::HashMap, path::Path};
 use anyhow::anyhow;
 use log::warn;
 use serde_json::{json, Value};
-use tauri::api::process::{Command, CommandChild, CommandEvent, Encoding};
+use tauri::{
+  api::process::{Command, CommandChild, CommandEvent, Encoding},
+  AppHandle, Manager,
+};
 use tokio::sync::mpsc::Receiver;
 
 use crate::{
@@ -36,6 +39,11 @@ impl Xray {
       rx: None,
       port: None,
     }
+  }
+
+  /// 节点
+  pub fn endpoint(&self) -> &Endpoint {
+    &self.ep
   }
 
   /// 监听端口
@@ -81,17 +89,17 @@ impl Xray {
 
   /// 停止 xray
   pub async fn stop(&mut self) -> Result<()> {
-    if let Some(child) = self.child.take() {
-      if let Some(mut rx) = self.rx.take() {
-        rx.close();
-      }
-
-      child.kill()?;
-      tokio::fs::remove_file(self.filename.clone().unwrap()).await?;
-
-      self.port = None;
-      self.filename = None;
+    if let Some(mut rx) = self.rx.take() {
+      rx.close();
     }
+
+    if let Some(child) = self.child.take() {
+      child.kill()?;
+      tokio::fs::remove_file(self.filename.take().unwrap()).await?;
+    }
+
+    self.port = None;
+    self.filename = None;
 
     Ok(())
   }
@@ -99,7 +107,18 @@ impl Xray {
   /// 等待进程运行
   pub async fn wait_for_started(&mut self) -> Result<()> {
     if let Some(mut rx) = self.rx.take() {
-      if let Some(_) = rx.recv().await {
+      if let Some(event) = rx.recv().await {
+        let app = get_app_handle();
+        send_event(&app, event);
+
+        tauri::async_runtime::spawn(async move {
+          while let Some(event) = rx.recv().await {
+            send_event(&app, event);
+          }
+
+          rx.close();
+        });
+
         return Ok(());
       }
     }
@@ -298,7 +317,8 @@ async fn get_inbound_objects(for_test: bool) -> Result<(Vec<Value>, u16)> {
   } else {
     // 正常用，生成 socks、http 和 API 入站
     // 用户配置
-    let settings = get_settings().await?;
+    let app = get_app_handle().unwrap();
+    let settings = get_settings(&app).await?;
     let listen = if settings.allow_lan {
       "0.0.0.0"
     } else {
@@ -342,14 +362,21 @@ async fn get_inbound_objects(for_test: bool) -> Result<(Vec<Value>, u16)> {
   Ok((inbounds, port))
 }
 
-async fn save_as(config: Value, filename: String) -> Result<()> {
-  if let Some(app) = get_app_handle() {
-    let resolver = app.path_resolver();
-    let mut fullpath = resolver.app_config_dir().unwrap();
-    fullpath.push(filename);
-    tokio::fs::write(fullpath, config.to_string()).await?;
-    Ok(())
-  } else {
-    Err(Error::Anyhow(anyhow!("No app handle")))
+fn send_event(app: &Option<AppHandle>, event: CommandEvent) {
+  if let Some(ref app) = app {
+    match event {
+      CommandEvent::Stderr(line) | CommandEvent::Stdout(line) | CommandEvent::Error(line) => {
+        let _ = app.emit_all("app://xray/log", line);
+      }
+
+      CommandEvent::Terminated(payload) => {
+        let _ = app.emit_all(
+          "app://xray/log",
+          format!("Xray terminated: code {}", payload.code.unwrap_or(-1)),
+        );
+      }
+
+      _ => {}
+    }
   }
 }

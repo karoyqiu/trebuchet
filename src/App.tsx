@@ -4,7 +4,7 @@ import { appWindow } from '@tauri-apps/api/window';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { updateSubscriptions } from './api/subscription';
+import { updateSubscriptions } from './api/bindings';
 import useStats from './api/useStats';
 import useSubscribe from './api/useSubscribe';
 import Alert from './components/Alert';

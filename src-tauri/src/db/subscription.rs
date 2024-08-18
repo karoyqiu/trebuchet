@@ -14,7 +14,7 @@ use ormlite::{
 use scopeguard::defer;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use tauri::{Manager, State};
+use tauri::{AppHandle, Manager, State};
 
 use crate::{
   app_handle::get_app_handle,
@@ -52,10 +52,10 @@ impl Subscription {
     let app = get_app_handle();
 
     if let Some(app) = app {
-      self.set_updating(true);
+      self.set_updating(&app, true);
 
       defer! {
-        self.set_updating(false);
+        self.set_updating(&app, false);
       }
 
       // 下载订阅
@@ -112,7 +112,7 @@ impl Subscription {
   }
 
   /// 设置正在更新状态
-  fn set_updating(&self, updating: bool) {
+  fn set_updating(&self, app: &AppHandle, updating: bool) {
     let mut lock = UPDATING_ONES.write().unwrap();
 
     if updating {
@@ -122,5 +122,15 @@ impl Subscription {
       debug!("Clear sub {} updating", self.id);
       lock.remove(&self.id);
     }
+
+    app.emit_all("app://subscription/updating", ()).unwrap();
   }
+}
+
+/// 获取正在更新的订阅 ID 列表
+#[tauri::command]
+#[specta::specta]
+pub fn db_get_updating_subscription_ids() -> Vec<i64> {
+  let lock = UPDATING_ONES.read().unwrap();
+  Vec::from_iter(lock.to_owned())
 }

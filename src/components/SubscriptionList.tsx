@@ -2,21 +2,20 @@ import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg?react';
 import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react';
 import RefreshIcon from '@material-symbols/svg-400/outlined/refresh.svg?react';
 import React from 'react';
-import { dbRemoveSubscription, dbUpdateSubscription } from '../api/bindings';
-import { updateSubscription } from '../api/subscription';
-import useSubscriptionUpdating from '../api/useSubscriptionUpdating';
+import { dbRemoveSubscription, dbUpdateSubscription, updateSubscription } from '../api/bindings';
+import { updatingSubs } from '../api/updatingSubs';
 import { Subscription, subscriptions } from '../db/subscription';
 import SubscriptionDialog from './SubscriptionDialog';
 
 type SubscriptionRowProps = {
   sub: Subscription;
+  isUpdating: boolean;
   onEdit: (sub: Subscription) => void;
   onRemove: (sub: Subscription) => void;
 };
 
 const SubscriptionRow = (props: SubscriptionRowProps) => {
-  const { sub, onEdit, onRemove } = props;
-  const isUpdating = useSubscriptionUpdating(sub.id!);
+  const { sub, isUpdating, onEdit, onRemove } = props;
 
   return (
     <tr key={sub.id} className="hover">
@@ -44,7 +43,7 @@ const SubscriptionRow = (props: SubscriptionRowProps) => {
             <button
               className="btn btn-ghost btn-square join-item"
               disabled={isUpdating}
-              onClick={() => updateSubscription(sub)}
+              onClick={() => updateSubscription(sub.id)}
             >
               <RefreshIcon className={isUpdating ? 'animate-spin' : ''} />
             </button>
@@ -69,6 +68,7 @@ export default function SubscriptionList() {
   const [sub, setSub] = React.useState<Subscription>({ id: 0, name: '', url: '', disabled: null });
   const ref = React.useRef<HTMLDialogElement>(null);
   const items = subscriptions.use() ?? [];
+  const updatings = updatingSubs.use() ?? [];
 
   return (
     <>
@@ -78,6 +78,7 @@ export default function SubscriptionList() {
             <SubscriptionRow
               key={item.id}
               sub={item}
+              isUpdating={updatings.includes(item.id)}
               onEdit={(sub) => {
                 setSub(sub);
                 console.log('Show');

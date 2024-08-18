@@ -130,6 +130,13 @@ export function updateSubscriptions() {
 }
 
 /**
+ * 获取正在更新的订阅 ID 列表
+ */
+export function dbGetUpdatingSubscriptionIds() {
+    return invoke()<number[]>("db_get_updating_subscription_ids")
+}
+
+/**
  * 节点
  */
 export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }

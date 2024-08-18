@@ -23,7 +23,7 @@ use command::{
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
   db_query_endpoints, db_query_subscriptions, db_remove_subscription, db_set_settings,
-  db_update_subscription, initialize, DbState,
+  db_update_subscription, initialize, subscription::db_get_updating_subscription_ids, DbState,
 };
 use error::{map_any_error, map_anything, Result};
 use log::LevelFilter;
@@ -142,6 +142,7 @@ fn export_bindings() {
       test_latency,
       update_subscription,
       update_subscriptions,
+      db_get_updating_subscription_ids,
     ]
     .unwrap(),
     config,
@@ -298,6 +299,7 @@ fn main() {
       test_latency,
       update_subscription,
       update_subscriptions,
+      db_get_updating_subscription_ids,
       download,
       download_resource,
       query_stats,

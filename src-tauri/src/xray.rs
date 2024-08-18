@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::anyhow;
-use log::{debug, trace, warn};
+use log::{trace, warn};
 use serde_json::{json, Value};
 use tauri::{
   api::process::{Command, CommandChild, CommandEvent, Encoding},
@@ -67,8 +67,6 @@ impl Xray {
       let filename = fullpath.clone().into_os_string().into_string().unwrap();
 
       self.save_config_file(rule, &fullpath).await?;
-
-      debug!("Here {}", line!());
 
       // 启动 xray
       let cmd = Command::new_sidecar("xray")?

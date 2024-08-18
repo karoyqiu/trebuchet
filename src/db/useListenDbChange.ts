@@ -1,6 +1,7 @@
 import { listen } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
 import { reloadCurrent } from '../api/currentEndpoint';
+import { reloadUpdatingSubs } from '../api/updatingSubs';
 import { reloadEndpoints } from './endpoint';
 import { reloadSubscriptions } from './subscription';
 
@@ -10,6 +11,7 @@ const useListenDbChange = () => {
       listen('app://db/subscription', reloadSubscriptions),
       listen('app://db/endpoint', reloadEndpoints),
       listen('app://endpoint/current', reloadCurrent),
+      listen('app://subscription/updating', reloadUpdatingSubs),
     ]);
 
     return () => {

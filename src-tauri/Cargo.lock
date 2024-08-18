@@ -677,8 +677,10 @@ checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
 
@@ -5091,6 +5093,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio_schedule"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61c291c554da3518d6ef69c76ea35aabc78f736185a16b6017f6d1c224dac2e0"
+dependencies = [
+ "chrono",
+ "tokio",
+]
+
+[[package]]
 name = "toml"
 version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5259,6 +5271,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-js-set-interval",
+ "tokio_schedule",
  "uri_parser",
  "urlencoding",
 ]

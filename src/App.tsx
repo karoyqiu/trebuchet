@@ -1,5 +1,4 @@
 import { getMatches } from '@tauri-apps/api/cli';
-import { invoke } from '@tauri-apps/api/tauri';
 import { appWindow } from '@tauri-apps/api/window';
 import { SnackbarProvider } from 'notistack';
 import React from 'react';
@@ -14,20 +13,6 @@ import { endpointCount } from './db/endpoint';
 import { subscriptionCount } from './db/subscription';
 import useListenDbChange from './db/useListenDbChange';
 
-// 更新 geoip.dat & geosite.dat
-const updateGeosites = async () => {
-  await Promise.allSettled([
-    invoke('download_resource', {
-      url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat',
-      filename: 'geoip.dat',
-    }),
-    invoke('download_resource', {
-      url: 'https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat',
-      filename: 'geosite.dat',
-    }),
-  ]);
-};
-
 function App() {
   const epCount = endpointCount.use() ?? 0;
   const subCount = subscriptionCount.use() ?? 0;
@@ -41,10 +26,6 @@ function App() {
         }
       })
       .catch(() => {});
-
-    // 每 12 小时更新
-    const timer = setInterval(updateGeosites, 12 * 60 * 60 * 1000);
-    return () => clearInterval(timer);
   }, []);
 
   const stats = useStats();

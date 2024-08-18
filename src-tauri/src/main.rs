@@ -18,13 +18,14 @@ use command::{
   },
   get_available_port,
   subscription::{update_subscription, update_subscriptions},
+  update_geosites,
 };
 use db::{
   db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
   db_query_endpoints, db_query_subscriptions, db_remove_subscription, db_set_settings,
   db_update_subscription, initialize, subscription::db_get_updating_subscription_ids, DbState,
 };
-use error::{map_any_error, map_anything, Result};
+use error::{map_anything, Result};
 use log::LevelFilter;
 use tauri::{
   App, AppHandle, CustomMenuItem, Manager, State, SystemTray, SystemTrayEvent, SystemTrayMenu,
@@ -33,53 +34,13 @@ use tauri::{
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
 use timers::subscription::{start_auto_update_subscriptions, SubTimerState};
+use tokio_schedule::{every, Job};
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
   args: Vec<String>,
   cwd: String,
 }
-
-/// 下载指定 URL，并返回文本内容。
-#[tauri::command]
-async fn download(url: &str) -> Result<String> {
-  let body = reqwest::get(url).await?.text().await?;
-  Ok(body)
-}
-
-/// 下载资源文件，并保存到应用数据目录。
-#[tauri::command]
-async fn download_resource(app: AppHandle, url: &str, filename: &str) -> Result<()> {
-  if let Some(mut dir) = app.path_resolver().app_data_dir() {
-    dir.push(filename);
-    let body = reqwest::get(url).await?.bytes().await?;
-    tokio::fs::write(dir, body).await.map_err(map_any_error)
-  } else {
-    Err(map_anything("No app data dir"))
-  }
-}
-
-// /// 测试指定代理的延迟，结果为毫秒。
-// #[tauri::command]
-// async fn test_latency(proxy_port: u16, url: &str, timeout: Option<u64>) -> Result<i32> {
-//   let proxy_url = format!("socks5://127.0.0.1:{}", proxy_port);
-//   let client = reqwest::Client::builder()
-//     .timeout(Duration::new(timeout.unwrap_or(10), 0))
-//     .proxy(reqwest::Proxy::all(proxy_url)?)
-//     .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0")
-//     .build()?;
-
-//   let now = Instant::now();
-//   let status = client.head(url).send().await?.status();
-//   let elapsed = now.elapsed().as_millis() as i32;
-
-//   if status.is_success() {
-//     Ok(elapsed)
-//   } else {
-//     // 999999 表示超时或失败
-//     Ok(999999)
-//   }
-// }
 
 /// 如果指定的资源文件在目标目录中不存在，则复制一份。
 fn copy_resource_if_not_exists(app: &App, filename: &str) -> Result<()> {
@@ -181,6 +142,9 @@ fn show_main_window(app: &AppHandle) -> Result<()> {
 fn main() {
   #[cfg(debug_assertions)]
   export_bindings();
+
+  let update_geo = every(12).hours().perform(|| update_geosites());
+  tauri::async_runtime::spawn(update_geo);
 
   let mut builder = tauri::Builder::default();
 
@@ -295,8 +259,6 @@ fn main() {
       update_subscription,
       update_subscriptions,
       db_get_updating_subscription_ids,
-      download,
-      download_resource,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

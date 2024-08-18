@@ -38,13 +38,16 @@ pub async fn test_latencies(app: AppHandle) -> Result<()> {
   let settings = get_settings(&app).await?;
   let sem = Arc::new(Semaphore::new(settings.ep_test_concurrency as usize));
 
+  // TODO: 这里得一个一个地起 xray，因为每次都要不同的端口
   for ep in eps {
     let permit = Arc::clone(&sem).acquire_owned().await;
     let app = app.clone();
     let settings = settings.clone();
+    let xray = Xray::new(ep);
+
     tauri::async_runtime::spawn(async move {
       let _permit = permit;
-      test_endpoint(&app, &ep, &settings).await.unwrap();
+      test_endpoint(&app, xray, &settings).await.unwrap();
     });
   }
 
@@ -59,7 +62,8 @@ pub async fn test_latency(app: AppHandle, ep_id: i64) -> Result<()> {
   let ep: Endpoint = select(&app, ep_id).await?;
   info!("Testing latency for endpoint {} - {}", ep.id, &ep.name);
   let settings = get_settings(&app).await?;
-  test_endpoint(&app, &ep, &settings).await?;
+  let xray = Xray::new(ep);
+  test_endpoint(&app, xray, &settings).await?;
 
   Ok(())
 }
@@ -136,9 +140,9 @@ pub async fn select_fastest_endpoint(app: AppHandle) -> Result<i64> {
   Ok(ep.id)
 }
 
-async fn test_endpoint(app: &AppHandle, ep: &Endpoint, settings: &Settings) -> Result<()> {
+async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> Result<()> {
+  let ep = xray.endpoint().clone();
   info!("Testing endpoint {} - {}", ep.id, &ep.name);
-  let mut xray = Xray::new(ep.clone());
   xray.start("test").await?;
   xray.wait_for_started().await?;
 

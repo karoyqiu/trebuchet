@@ -305,6 +305,12 @@ impl Xray {
   }
 }
 
+impl Drop for Xray {
+  fn drop(&mut self) {
+    let _ = tauri::async_runtime::block_on(self.stop());
+  }
+}
+
 /// 获取入站配置
 async fn get_inbound_objects(for_test: bool) -> Result<(Vec<Value>, u16)> {
   let mut inbounds = Vec::new();

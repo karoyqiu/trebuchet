@@ -5,11 +5,10 @@ mod app_handle;
 mod command;
 mod db;
 mod error;
-mod query_stats;
 mod timers;
 mod xray;
 
-use std::{fs, sync::Arc};
+use std::fs;
 
 use app_handle::set_app_handle;
 use command::{
@@ -27,10 +26,9 @@ use db::{
 };
 use error::{map_any_error, map_anything, Result};
 use log::LevelFilter;
-use query_stats::{query_stats, query_sys};
 use tauri::{
-  async_runtime::Mutex, App, AppHandle, CustomMenuItem, Manager, State, SystemTray,
-  SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, WindowBuilder, WindowEvent,
+  App, AppHandle, CustomMenuItem, Manager, State, SystemTray, SystemTrayEvent, SystemTrayMenu,
+  SystemTrayMenuItem, WindowBuilder, WindowEvent,
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
@@ -113,6 +111,7 @@ fn copy_resource_if_not_exists(app: &App, filename: &str) -> Result<()> {
 /// 导出 API 绑定代码
 #[cfg(debug_assertions)]
 fn export_bindings() {
+  use command::query_stats::AllStats;
   //use db::settings::Settings;
   use specta::{
     collect_types,
@@ -121,7 +120,7 @@ fn export_bindings() {
 
   let config = ExportConfiguration::new().bigint(BigIntExportBehavior::Number);
 
-  //println!("{}", specta::ts::export::<Settings>(&config).unwrap());
+  println!("{}", specta::ts::export::<AllStats>(&config).unwrap());
 
   tauri_specta::ts::export_with_cfg(
     collect_types![
@@ -233,12 +232,8 @@ fn main() {
       }
       _ => {}
     })
-    .manage(DbState {
-      db: Arc::new(Mutex::new(None)),
-    })
-    .manage(XrayState {
-      xray: Arc::new(Mutex::new(None)),
-    })
+    .manage(DbState::default())
+    .manage(XrayState::default())
     .manage(SubTimerState::default())
     .setup(|app| {
       let resolver = app.path_resolver();
@@ -302,8 +297,6 @@ fn main() {
       db_get_updating_subscription_ids,
       download,
       download_resource,
-      query_stats,
-      query_sys,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -22,6 +22,7 @@ use crate::error::Result;
 
 const CURRENT_DB_VERSION: u32 = 2;
 
+#[derive(Default)]
 pub struct DbState {
   pub db: Arc<Mutex<Option<SqliteConnection>>>,
 }

@@ -1,16 +1,25 @@
 import { invoke } from '@tauri-apps/api/tauri';
-import React from 'react';
+import { entity } from 'simpler-state';
 import db from '../db';
 import FlowLog from '../db/flowLog';
+import useEvent from './useEvent';
 
-type Stats = {
-  totalDownload: number;
-  totalUpload: number;
+type AllStats = { totalDownload: number; totalUpload: number; uptime: number };
+
+type Stats = AllStats & {
   deltaDownload: number;
   deltaUpload: number;
-  uptime: number;
   connected: boolean;
 };
+
+const stats = entity<Stats>({
+  totalDownload: 0,
+  totalUpload: 0,
+  deltaDownload: 0,
+  deltaUpload: 0,
+  uptime: 0,
+  connected: false,
+});
 
 const queryStats = async () => {
   const stats = {
@@ -51,46 +60,32 @@ const querySys = async () => {
 };
 
 const useStats = () => {
-  const [stats, setStats] = React.useState<Stats>({
-    totalDownload: 0,
-    totalUpload: 0,
-    deltaDownload: 0,
-    deltaUpload: 0,
-    uptime: 0,
-    connected: false,
+  const s = stats.use();
+
+  useEvent<AllStats>('app://stats', (event) => {
+    const flow: FlowLog = {
+      ts: Date.now(),
+      download: Math.max(0, event.payload.totalDownload - s.totalDownload),
+      upload: Math.max(0, event.payload.totalUpload - s.totalUpload),
+    };
+
+    // 保留 2 分钟内的数据
+    db.flowLogs
+      .where('ts')
+      .below(flow.ts - 2 * 60 * 1000)
+      .delete()
+      .catch(() => {});
+    db.flowLogs.add(flow).catch(() => {});
+
+    stats.set({
+      ...event.payload,
+      connected: true,
+      deltaDownload: flow.download,
+      deltaUpload: flow.upload,
+    });
   });
 
-  React.useEffect(() => {
-    const timer = setInterval(async () => {
-      const [s, sys] = await Promise.all([queryStats(), querySys()]);
-      setStats((old) => {
-        const flow: FlowLog = {
-          ts: Date.now(),
-          download: Math.max(0, s.totalDownload - old.totalDownload),
-          upload: Math.max(0, s.totalUpload - old.totalUpload),
-        };
-
-        // 保留 2 分钟内的数据
-        db.flowLogs
-          .where('ts')
-          .below(flow.ts - 2 * 60 * 1000)
-          .delete()
-          .catch(() => {});
-        db.flowLogs.add(flow).catch(() => {});
-
-        return {
-          ...s,
-          ...sys,
-          deltaDownload: flow.download,
-          deltaUpload: flow.upload,
-        };
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [setStats]);
-
-  return stats;
+  return s;
 };
 
 export default useStats;

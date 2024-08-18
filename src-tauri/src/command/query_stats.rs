@@ -1,10 +1,11 @@
-use crate::error::Result;
+use crate::{app_handle::get_app_handle, error::Result};
 use serde::{Deserialize, Serialize};
-use tauri::api::process::Command;
+use specta::Type;
+use tauri::{api::process::Command, async_runtime::spawn, Manager};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct XrayStats {
+struct XrayStats {
   total_download: u64,
   total_upload: u64,
 }
@@ -21,13 +22,20 @@ struct StatObject {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SysObject {
+struct SysObject {
   #[serde(rename(deserialize = "Uptime"))]
   uptime: u64,
 }
 
-#[tauri::command]
-pub async fn query_stats(api_port: u16) -> Result<XrayStats> {
+#[derive(Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct AllStats {
+  total_download: u64,
+  total_upload: u64,
+  uptime: u64,
+}
+
+async fn query_stats(api_port: u16) -> Result<XrayStats> {
   let output = Command::new_sidecar("xray")?
     .args([
       "api",
@@ -57,8 +65,7 @@ pub async fn query_stats(api_port: u16) -> Result<XrayStats> {
   Ok(stats)
 }
 
-#[tauri::command]
-pub async fn query_sys(api_port: u16) -> Result<SysObject> {
+async fn query_sys(api_port: u16) -> Result<SysObject> {
   let output = Command::new_sidecar("xray")?
     .args([
       "api",
@@ -69,4 +76,26 @@ pub async fn query_sys(api_port: u16) -> Result<SysObject> {
 
   let obj: SysObject = serde_json::from_str(&output.stdout)?;
   Ok(obj)
+}
+
+/// 查询所有数据并上报
+pub(crate) async fn query_all_stats(api_port: u16) -> Result<()> {
+  if let Some(app) = get_app_handle() {
+    let stats = spawn(query_stats(api_port));
+    let sys = spawn(query_sys(api_port));
+
+    let stats = stats.await??;
+    let sys = sys.await??;
+
+    app.emit_all(
+      "app://stats",
+      AllStats {
+        total_download: stats.total_download,
+        total_upload: stats.total_upload,
+        uptime: sys.uptime,
+      },
+    )?;
+  }
+
+  Ok(())
 }

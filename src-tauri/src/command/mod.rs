@@ -3,6 +3,7 @@ use std::net::TcpListener;
 use crate::error::Result;
 
 pub mod endpoint;
+pub mod query_stats;
 pub mod subscription;
 
 /// 获取可用于侦听的 TCP 端口

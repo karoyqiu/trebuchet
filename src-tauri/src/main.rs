@@ -29,7 +29,7 @@ use error::{map_anything, Result};
 use log::LevelFilter;
 use tauri::{
   App, AppHandle, CustomMenuItem, Manager, State, SystemTray, SystemTrayEvent, SystemTrayMenu,
-  SystemTrayMenuItem, WindowBuilder, WindowEvent,
+  SystemTrayMenuItem, WindowBuilder,
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::LogTarget;
@@ -189,13 +189,6 @@ fn main() {
       },
       _ => {}
     })
-    .on_window_event(|event| match event.event() {
-      WindowEvent::CloseRequested { api, .. } => {
-        event.window().hide().unwrap();
-        api.prevent_close();
-      }
-      _ => {}
-    })
     .manage(DbState::default())
     .manage(XrayState::default())
     .manage(SubTimerState::default())
@@ -260,6 +253,12 @@ fn main() {
       update_subscriptions,
       db_get_updating_subscription_ids,
     ])
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    .build(tauri::generate_context!())
+    .expect("error while running tauri application")
+    .run(|_app_handle, event| match event {
+      tauri::RunEvent::ExitRequested { api, .. } => {
+        api.prevent_exit();
+      }
+      _ => {}
+    })
 }

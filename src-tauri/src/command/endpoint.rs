@@ -89,7 +89,10 @@ pub async fn set_current_endpoint(app: AppHandle, ep_id: i64) -> Result<()> {
 
   let state: State<XrayState> = app.state();
   let mut xray_guard = state.xray.lock().await;
-  *xray_guard = None;
+
+  if let Some(mut xray) = xray_guard.take() {
+    xray.stop().await?;
+  }
 
   let mut xray = Xray::new(ep);
   xray.start(&settings.rule).await?;
@@ -151,7 +154,10 @@ async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> 
     settings.ep_test_interval,
     &settings.ep_test_url,
   )
-  .await?;
+  .await
+  .unwrap_or(999999);
+  xray.stop().await?;
+
   debug!("Endpoint {} latency {}", ep.id, latency);
 
   let state: State<DbState> = app.state();

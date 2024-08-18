@@ -108,19 +108,20 @@ impl Xray {
   /// 等待进程运行
   pub async fn wait_for_started(&mut self) -> Result<()> {
     if let Some(mut rx) = self.rx.take() {
-      if let Some(event) = rx.recv().await {
+      while let Some(event) = rx.recv().await {
         let app = get_app_handle();
-        send_event(&app, event);
 
-        tauri::async_runtime::spawn(async move {
-          while let Some(event) = rx.recv().await {
-            send_event(&app, event);
-          }
+        if send_event(&app, event) {
+          tauri::async_runtime::spawn(async move {
+            while let Some(event) = rx.recv().await {
+              send_event(&app, event);
+            }
 
-          rx.close();
-        });
+            rx.close();
+          });
 
-        return Ok(());
+          return Ok(());
+        }
       }
     }
 
@@ -305,11 +306,13 @@ impl Xray {
   }
 }
 
-impl Drop for Xray {
-  fn drop(&mut self) {
-    let _ = tauri::async_runtime::block_on(self.stop());
-  }
-}
+// impl Drop for Xray {
+//   fn drop(&mut self) {
+//     if self.child.is_some() {
+//       let _ = tauri::async_runtime::block_on(self.stop());
+//     }
+//   }
+// }
 
 /// 获取入站配置
 async fn get_inbound_objects(for_test: bool) -> Result<(Vec<Value>, u16)> {
@@ -381,13 +384,15 @@ async fn get_inbound_objects(for_test: bool) -> Result<(Vec<Value>, u16)> {
   Ok((inbounds, port))
 }
 
-fn send_event(app: &Option<AppHandle>, event: CommandEvent) {
+fn send_event(app: &Option<AppHandle>, event: CommandEvent) -> bool {
   if let Some(ref app) = app {
     match event {
       CommandEvent::Stderr(line) | CommandEvent::Stdout(line) | CommandEvent::Error(line) => {
         let line = line.trim();
         //trace!("Xray: {}", line);
         let _ = app.emit_all("app://xray/log", line);
+
+        return line.contains("Xray") && line.contains("started");
       }
 
       CommandEvent::Terminated(payload) => {
@@ -401,4 +406,6 @@ fn send_event(app: &Option<AppHandle>, event: CommandEvent) {
       _ => {}
     }
   }
+
+  false
 }

@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/tauri';
 import { entity } from 'simpler-state';
 import db from '../db';
 import FlowLog from '../db/flowLog';
@@ -20,44 +19,6 @@ const stats = entity<Stats>({
   uptime: 0,
   connected: false,
 });
-
-const queryStats = async () => {
-  const stats = {
-    totalDownload: 0,
-    totalUpload: 0,
-  };
-
-  if (window.xray.apiPort > 0) {
-    try {
-      const result = await invoke<Stats>('query_stats', { apiPort: window.xray.apiPort });
-      stats.totalUpload = result.totalUpload;
-      stats.totalDownload = result.totalDownload;
-    } catch (e) {
-      // Do nothing
-    }
-  }
-
-  return stats;
-};
-
-const querySys = async () => {
-  const stats = {
-    uptime: 0,
-    connected: false,
-  };
-
-  if (window.xray.apiPort > 0) {
-    try {
-      const result = await invoke<Stats>('query_sys', { apiPort: window.xray.apiPort });
-      stats.uptime = result.uptime;
-      stats.connected = true;
-    } catch (e) {
-      // Do nothing
-    }
-  }
-
-  return stats;
-};
 
 const useStats = () => {
   const s = stats.use();

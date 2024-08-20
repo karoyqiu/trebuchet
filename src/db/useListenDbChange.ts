@@ -1,5 +1,6 @@
 import { listen } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
+import db from '.';
 import { reloadCurrent } from '../api/currentEndpoint';
 import { reloadUpdatingSubs } from '../api/updatingSubs';
 import { reloadEndpoints } from './endpoint';
@@ -12,6 +13,9 @@ const useListenDbChange = () => {
       listen('app://db/endpoint', reloadEndpoints),
       listen('app://endpoint/current', reloadCurrent),
       listen('app://subscription/updating', reloadUpdatingSubs),
+      listen<string>('app://xray/log', async (event) => {
+        await db.logEntries.add({ log: event.payload });
+      }),
     ]);
 
     return () => {

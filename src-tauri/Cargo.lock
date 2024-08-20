@@ -5273,6 +5273,7 @@ dependencies = [
  "tokio-js-set-interval",
  "tokio_schedule",
  "uri_parser",
+ "url",
  "urlencoding",
 ]
 

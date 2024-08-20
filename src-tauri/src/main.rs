@@ -12,10 +12,7 @@ use std::fs;
 
 use app_handle::set_app_handle;
 use command::{
-  endpoint::{
-    get_current_endpoint, select_fastest_endpoint, set_current_endpoint, test_latencies,
-    test_latency, XrayState,
-  },
+  endpoint::{get_current_endpoint, select_fastest_endpoint, set_current_endpoint, XrayState},
   get_available_port,
   subscription::{update_subscription, update_subscriptions},
   update_geosites,
@@ -98,8 +95,6 @@ fn export_bindings() {
       get_current_endpoint,
       select_fastest_endpoint,
       set_current_endpoint,
-      test_latencies,
-      test_latency,
       update_subscription,
       update_subscriptions,
       db_get_updating_subscription_ids,
@@ -247,8 +242,6 @@ fn main() {
       get_current_endpoint,
       select_fastest_endpoint,
       set_current_endpoint,
-      test_latencies,
-      test_latency,
       update_subscription,
       update_subscriptions,
       db_get_updating_subscription_ids,

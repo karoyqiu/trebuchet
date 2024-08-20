@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use base64::prelude::{Engine, BASE64_STANDARD};
+use log::debug;
 use ormlite::Model;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -53,7 +54,7 @@ struct VMessParams {
   //v: String,
   ps: String,
   add: String,
-  port: String,
+  port: u16,
   //#[serde(rename = "type")]
   //type_: String,
   id: String,
@@ -107,6 +108,10 @@ impl Endpoint {
     let full = String::from(uri);
     let uri = &uri[8..];
     let params = BASE64_STANDARD.decode(uri)?;
+    debug!(
+      "Decoded vmess: {}",
+      String::from_utf8(params.clone()).unwrap()
+    );
     let params: VMessParams = serde_json::from_slice(&params)?;
     let outbound = json!({
       "tag": "proxy",
@@ -114,7 +119,7 @@ impl Endpoint {
       "settings": {
         "vnext": [{
           "address": params.add,
-          "port": params.port.parse::<u16>()?,
+          "port": params.port,
           "users": [{
             "id": params.id,
             "security": params.scy,
@@ -130,7 +135,7 @@ impl Endpoint {
       uri: full,
       name: params.ps,
       host: params.add,
-      port: params.port.parse::<u16>()?,
+      port: params.port,
       latency: None,
       outbound: outbound.to_string(),
     })

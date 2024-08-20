@@ -60,9 +60,11 @@ impl Subscription {
 
       // 下载订阅
       let body = reqwest::get(&self.url).await?.text().await?;
+      debug!("String: {}", &body);
       // base64 解码
       let body = BASE64_STANDARD.decode(body)?;
       let body = String::from_utf8(body)?;
+      debug!("Decoded: {}", &body);
 
       // 按行分割
       let lines = body.split("\n");
@@ -80,6 +82,7 @@ impl Subscription {
       // 插入新的
       for line in lines {
         let line = line.trim();
+        debug!("Line: {}", line);
 
         if line.is_empty() {
           continue;

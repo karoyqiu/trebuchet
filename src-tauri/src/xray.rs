@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::anyhow;
-use log::{trace, warn};
+use log::{debug, trace, warn};
 use serde_json::{json, Value};
 use tauri::{
   api::process::{Command, CommandChild, CommandEvent, Encoding},
@@ -108,6 +108,8 @@ impl Xray {
   /// 等待进程运行
   pub async fn wait_for_started(&mut self) -> Result<()> {
     if let Some(mut rx) = self.rx.take() {
+      debug!("Has rx");
+
       while let Some(event) = rx.recv().await {
         let app = get_app_handle();
 
@@ -123,6 +125,8 @@ impl Xray {
           return Ok(());
         }
       }
+
+      debug!("No more messages?");
     }
 
     Err(Error::Anyhow(anyhow!("No rx")))
@@ -162,6 +166,10 @@ impl Xray {
         rules.push(json!({
           "type": "field",
           "outboundTag": "block",
+          "domain": [
+            "activity.meteor.com",
+            "geosite:category-ads-all",
+          ]
         }));
         rules.push(json!({
           "type": "field",

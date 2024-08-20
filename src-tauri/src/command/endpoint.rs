@@ -2,9 +2,10 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use log::{debug, info};
+use ormlite::TableMeta;
 use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
-  Model,
+  Executor, Model,
 };
 use tauri::{AppHandle, Manager, State};
 use tokio::sync::{Mutex, Semaphore};
@@ -28,10 +29,16 @@ pub struct XrayState {
 }
 
 /// 测试全部节点的连接速度
-#[tauri::command]
-#[specta::specta]
-pub async fn test_latencies(app: AppHandle) -> Result<()> {
+async fn test_latencies(app: AppHandle) -> Result<()> {
   let state: State<DbState> = app.state();
+  {
+    let mut db_guard = state.db.lock().await;
+    let db = db_guard.as_mut().expect("Database not intialized");
+    let sql = format!("UPDATE {} SET latency = -1", Endpoint::table_name());
+    db.execute(sql.as_str()).await?;
+    notify_change::<Endpoint>(&app)?;
+  }
+
   let eps = db_query_endpoints(state).await?;
   info!("Testing latencies for all {} endpoints", eps.len());
 
@@ -55,18 +62,6 @@ pub async fn test_latencies(app: AppHandle) -> Result<()> {
   Ok(())
 }
 
-/// 测试单个节点的连接速度
-#[tauri::command]
-#[specta::specta]
-pub async fn test_latency(app: AppHandle, ep_id: i64) -> Result<()> {
-  let ep: Endpoint = select(&app, ep_id).await?;
-  info!("Testing latency for endpoint {} - {}", ep.id, &ep.name);
-  let settings = get_settings(&app).await?;
-  let xray = Xray::new(ep);
-  test_endpoint(&app, xray, &settings).await?;
-
-  Ok(())
-}
 /// 设置当前节点
 #[tauri::command]
 #[specta::specta]

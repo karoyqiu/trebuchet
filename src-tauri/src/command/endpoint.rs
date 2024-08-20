@@ -9,6 +9,7 @@ use ormlite::{
 };
 use tauri::{AppHandle, Manager, State};
 use tokio::sync::{Mutex, Semaphore};
+use tokio::task::JoinSet;
 use tokio_js_set_interval::set_interval_async;
 
 use crate::{
@@ -45,19 +46,22 @@ async fn test_latencies(app: AppHandle) -> Result<()> {
   let settings = get_settings(&app).await?;
   let sem = Arc::new(Semaphore::new(settings.ep_test_concurrency as usize));
 
-  // TODO: 这里得一个一个地起 xray，因为每次都要不同的端口
+  // 这里得一个一个地起 xray，因为每次都要不同的端口
+  let mut tests = JoinSet::new();
+
   for ep in eps {
     let permit = Arc::clone(&sem).acquire_owned().await;
     let app = app.clone();
     let settings = settings.clone();
     let xray = Xray::new(ep);
 
-    tauri::async_runtime::spawn(async move {
+    tests.spawn(async move {
       let _permit = permit;
       test_endpoint(&app, xray, &settings).await.unwrap();
     });
   }
 
+  while let Some(_) = tests.join_next().await {}
   info!("All endpoints tested");
   Ok(())
 }
@@ -144,13 +148,9 @@ async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> 
   xray.start("test").await?;
   xray.wait_for_started().await?;
 
-  let latency = test_port(
-    xray.port().unwrap(),
-    settings.ep_test_interval,
-    &settings.ep_test_url,
-  )
-  .await
-  .unwrap_or(999999);
+  let latency = test_port(xray.port().unwrap(), &settings.ep_test_url)
+    .await
+    .unwrap_or(999999);
   xray.stop().await?;
 
   debug!("Endpoint {} latency {}", ep.id, latency);
@@ -168,10 +168,10 @@ async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> 
   Ok(())
 }
 
-async fn test_port(proxy_port: u16, timeout: u32, url: &String) -> Result<i32> {
+async fn test_port(proxy_port: u16, url: &String) -> Result<i32> {
   let proxy_url = format!("socks5://127.0.0.1:{}", proxy_port);
   let client = reqwest::Client::builder()
-    .timeout(Duration::new((timeout * 60).into(), 0))
+    .timeout(Duration::from_secs(10))
     .proxy(reqwest::Proxy::all(proxy_url)?)
     .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0")
     .build()?;

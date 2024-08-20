@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use base64::prelude::{Engine, BASE64_STANDARD};
 use log::debug;
@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use specta::Type;
 use thiserror::Error;
-use uri_parser::{parse_uri, URI};
+use url::Url;
 
 /// 节点
 #[derive(Clone, Debug, Deserialize, Serialize, Type, Model)]
@@ -35,7 +35,7 @@ pub struct Endpoint {
 #[derive(Debug, Error)]
 pub enum ParseEndpointError {
   #[error("invalid URI")]
-  InvalidUri(#[from] uri_parser::Error),
+  InvalidUri(#[from] url::ParseError),
   #[error("failed to decode base64")]
   Base64DecodeError(#[from] base64::DecodeError),
   #[error("failed to parse JSON")]
@@ -142,21 +142,21 @@ impl Endpoint {
   }
 
   /// 从 trojan、vless 或 ss URI 构建节点结构
-  fn from_others(s: &str, uri: &URI) -> Result<Self, ParseEndpointError> {
+  fn from_others(s: &str, uri: &Url) -> Result<Self, ParseEndpointError> {
     Ok(Endpoint {
       id: 0,
       sub_id: 0,
       uri: String::from(s),
-      name: urlencoding::decode(uri.hash.unwrap_or_default())?.into(),
-      host: String::from(uri.host.unwrap_or_default()),
-      port: uri.port.unwrap_or_default(),
+      name: urlencoding::decode(uri.fragment().unwrap_or_default())?.into(),
+      host: String::from(uri.host_str().unwrap_or_default()),
+      port: uri.port().unwrap_or_default(),
       latency: None,
       outbound: String::default(),
     })
   }
 
   /// 从 trojan URI 构建节点结构
-  fn from_trojan(s: &str, uri: &URI) -> Result<Self, ParseEndpointError> {
+  fn from_trojan(s: &str, uri: &Url) -> Result<Self, ParseEndpointError> {
     let mut ep = Self::from_others(s, uri)?;
     let outbound = json!({
       "tag": "proxy",
@@ -176,9 +176,9 @@ impl Endpoint {
   }
 
   /// 从 vless URI 构建节点结构
-  fn from_vless(s: &str, uri: &URI) -> Result<Self, ParseEndpointError> {
+  fn from_vless(s: &str, uri: &Url) -> Result<Self, ParseEndpointError> {
     let mut ep = Self::from_others(s, uri)?;
-    let params = uri.query.clone().unwrap_or_default();
+    let params: HashMap<_, _> = uri.query_pairs().into_owned().collect();
     let outbound = json!({
       "tag": "proxy",
       "protocol": "vless",
@@ -189,7 +189,7 @@ impl Endpoint {
           "users": [{
             "id": to_userinfo(uri),
             "encryption": "none",
-            "flow": params.get("flow").unwrap_or(&&""),
+            "flow": params.get("flow").unwrap_or(&String::default()),
           }]
         }]
       },
@@ -201,7 +201,7 @@ impl Endpoint {
   }
 
   /// 从 ss URI 构建节点结构
-  fn from_ss(s: &str, uri: &URI) -> Result<Self, ParseEndpointError> {
+  fn from_ss(s: &str, uri: &Url) -> Result<Self, ParseEndpointError> {
     let mut ep = Self::from_others(s, uri)?;
     let userinfo = to_userinfo(uri);
     let userinfo = if userinfo.contains(":") {
@@ -236,9 +236,9 @@ impl FromStr for Endpoint {
   type Err = ParseEndpointError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
-    let uri = parse_uri(s)?;
+    let uri = Url::parse(s)?;
 
-    match uri.scheme {
+    match uri.scheme() {
       "vmess" => Self::from_vmess(s),
       "trojan" => Self::from_trojan(s, &uri),
       "vless" => Self::from_vless(s, &uri),
@@ -248,23 +248,26 @@ impl FromStr for Endpoint {
   }
 }
 
-fn uri_to_stream_settings(uri: &URI) -> Value {
-  let params = uri.query.clone().unwrap_or_default();
-  let network = params.get("type").unwrap_or(&&"tcp");
+fn uri_to_stream_settings(uri: &Url) -> Value {
+  let params: HashMap<_, _> = uri.query_pairs().into_owned().collect();
+  let tcp = String::from("tcp");
+  let none = String::from("none");
+  let empty = String::default();
+  let network = params.get("type").unwrap_or(&tcp);
   let mut sso = json!({
     "network": *network,
   });
 
-  let header_type = params.get("headerType").unwrap_or(&&"none");
-  let host = params.get("host").unwrap_or(&&"");
-  let security = params.get("security").unwrap_or(&&"");
+  let header_type = params.get("headerType").unwrap_or(&none);
+  let host = params.get("host").unwrap_or(&empty);
+  let security = params.get("security").unwrap_or(&empty);
   let alpn = if let Some(alpn) = params.get("alpn") {
     Some(json!([*alpn]))
   } else {
     None
   };
 
-  let settings = match *network {
+  let settings = match network.as_str() {
     "tcp" => {
       if *header_type == "http" {
         json!({
@@ -290,59 +293,59 @@ fn uri_to_stream_settings(uri: &URI) -> Value {
     "kcp" => json!({
       "kcpSettings": {
         "header": { "type": *header_type },
-        "seed": params.get("seed").unwrap_or(&&""),
+        "seed": params.get("seed").unwrap_or(&String::default()),
       }
     }),
 
     "ws" => json!({
       "wsSettings": {
         "headers": { "host": host },
-        "path": params.get("path").unwrap_or(&&"/"),
+        "path": params.get("path").unwrap_or(&String::from("/")),
       }
     }),
 
     "http" | "h2" => json!({
       "httpSettings": {
         "host": [host],
-        "path": params.get("path").unwrap_or(&&"/"),
+        "path": params.get("path").unwrap_or(&String::from("/")),
       }
     }),
 
     "quic" => json!({
       "quicSettings": {
-        "security": params.get("quicSecurity").unwrap_or(&&"none"),
+        "security": params.get("quicSecurity").unwrap_or(&String::from("none")),
         "header": { "type": *header_type },
-        "key": params.get("key").unwrap_or(&&""),
+        "key": params.get("key").unwrap_or(&String::default()),
       }
     }),
 
     "grpc" => json!({
       "grpcSettings": {
-        "serviceName": params.get("serviceName").unwrap_or(&&""),
+        "serviceName": params.get("serviceName").unwrap_or(&String::default()),
       }
     }),
 
     _ => json!({}),
   };
 
-  let security = match *security {
+  let security = match security.as_str() {
     "tls" => json!({
       "security": "tls",
       "tlsSettings": {
-        "serverName": params.get("sni").unwrap_or(&uri.host.unwrap()),
+        "serverName": params.get("sni").unwrap_or(&String::from(uri.host_str().unwrap())),
         "alpn": alpn,
-        "fingerprint": params.get("fp").map(|v| *v),
+        "fingerprint": params.get("fp").unwrap_or(&String::default()),
       }
     }),
 
     "reality" => json!({
       "security": "reality",
       "realitySettings": {
-        "serverName": params.get("sni").unwrap_or(&&""),
-        "fingerprint": params.get("fp").unwrap_or(&&""),
-        "publicKey": params.get("pbk").unwrap_or(&&""),
-        "shortID": params.get("sid").unwrap_or(&&""),
-        "spiderX": params.get("spiderX").unwrap_or(&&""),
+        "serverName": params.get("sni").unwrap_or(&String::default()),
+        "fingerprint": params.get("fp").unwrap_or(&String::default()),
+        "publicKey": params.get("pbk").unwrap_or(&String::default()),
+        "shortID": params.get("sid").unwrap_or(&String::default()),
+        "spiderX": params.get("spiderX").unwrap_or(&String::default()),
       }
     }),
 
@@ -367,12 +370,14 @@ fn json_merge(a: &mut Value, b: Value) {
   }
 }
 
-fn to_userinfo(uri: &URI) -> String {
-  if let Some(user) = &uri.user {
-    if let Some(password) = user.password {
-      format!("{}:{}", user.name, password)
+fn to_userinfo(uri: &Url) -> String {
+  let user = uri.username();
+
+  if !user.is_empty() {
+    if let Some(password) = uri.password() {
+      format!("{}:{}", user, password)
     } else {
-      String::from(user.name)
+      String::from(user)
     }
   } else {
     String::default()

@@ -10,7 +10,7 @@ use ormlite::{
 use tauri::{AppHandle, Manager, State};
 use tokio::sync::{Mutex, Semaphore};
 use tokio::task::JoinSet;
-use tokio_js_set_interval::set_interval_async;
+use tokio_js_set_interval::{clear_interval, set_interval_async};
 
 use crate::{
   db::{
@@ -84,7 +84,7 @@ pub async fn get_current_endpoint(state: State<'_, XrayState>) -> Result<Option<
 pub async fn set_current_endpoint(app: AppHandle, ep_id: i64) -> Result<()> {
   let ep: Endpoint = select(&app, ep_id).await?;
   let settings = get_settings(&app).await?;
-  info!("Set current endpoint {} - {}", ep.id, &ep.name);
+  info!("Set current endpoint {:?}", &ep);
 
   let state: State<XrayState> = app.state();
   let mut xray_guard = state.xray.lock().await;
@@ -101,21 +101,23 @@ pub async fn set_current_endpoint(app: AppHandle, ep_id: i64) -> Result<()> {
 
   app.emit_all("app://endpoint/current", ())?;
 
-  if port != 0 {
-    start_query_stats(&state, port).await?;
-  }
+  start_query_stats(&state, port).await;
 
   Ok(())
 }
 
-async fn start_query_stats(state: &State<'_, XrayState>, api_port: u16) -> Result<()> {
+async fn start_query_stats(state: &State<'_, XrayState>, api_port: u16) {
   let mut guard = state.interval.lock().await;
 
-  if *guard == 0 {
-    *guard = set_interval_async!(move || { query_all_stats(api_port) }, 1000);
+  if *guard != 0 {
+    clear_interval(*guard);
   }
 
-  Ok(())
+  *guard = if api_port != 0 {
+    set_interval_async!(move || { query_all_stats(api_port) }, 1000)
+  } else {
+    0
+  };
 }
 
 /// 给所有节点测速，并选择最快的节点

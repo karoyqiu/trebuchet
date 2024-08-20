@@ -3,25 +3,25 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::{api::process::Command, async_runtime::spawn, Manager};
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct XrayStats {
   total_download: u64,
   total_upload: u64,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct StatItem {
   name: String,
-  value: String,
+  value: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct StatObject {
   stat: Vec<StatItem>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct SysObject {
   #[serde(rename(deserialize = "Uptime"))]
   uptime: u64,
@@ -43,20 +43,20 @@ async fn query_stats(api_port: u16) -> Result<XrayStats> {
       &format!("--server=127.0.0.1:{}", api_port),
     ])
     .output()?;
-
   let obj: StatObject = serde_json::from_str(&output.stdout)?;
+
   let mut stats = XrayStats {
     total_download: 0,
     total_upload: 0,
   };
 
-  for stat in obj.stat.iter() {
+  for stat in obj.stat {
     match stat.name.as_str() {
       "outbound>>>proxy>>>traffic>>>uplink" => {
-        stats.total_upload = stat.value.parse().unwrap_or_default();
+        stats.total_upload = stat.value.unwrap_or_default().parse().unwrap_or_default();
       }
       "outbound>>>proxy>>>traffic>>>downlink" => {
-        stats.total_download = stat.value.parse().unwrap_or_default();
+        stats.total_download = stat.value.unwrap_or_default().parse().unwrap_or_default();
       }
       _ => {}
     }

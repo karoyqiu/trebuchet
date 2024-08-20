@@ -96,7 +96,7 @@ impl Xray {
 
     if let Some(child) = self.child.take() {
       child.kill()?;
-      tokio::fs::remove_file(self.filename.take().unwrap()).await?;
+      let _ = tokio::fs::remove_file(self.filename.take().unwrap()).await;
     }
 
     self.port = None;
@@ -108,8 +108,6 @@ impl Xray {
   /// 等待进程运行
   pub async fn wait_for_started(&mut self) -> Result<()> {
     if let Some(mut rx) = self.rx.take() {
-      debug!("Has rx");
-
       while let Some(event) = rx.recv().await {
         let app = get_app_handle();
 

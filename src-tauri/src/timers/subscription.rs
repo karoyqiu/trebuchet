@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use log::{info, warn};
-use tauri::{Manager, State};
+use tauri::{async_runtime::Mutex, Manager, State};
 use tokio_js_set_interval::{clear_interval, set_interval};
 
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
 
 #[derive(Default)]
 pub struct SubTimerState {
-  pub timer_id: Arc<Mutex<Option<u64>>>,
+  pub timer_id: Arc<Mutex<u64>>,
 }
 
 fn auto_update() {
@@ -30,10 +30,10 @@ fn auto_update() {
 pub async fn start_auto_update_subscriptions() -> Result<()> {
   let app = get_app_handle().expect("No app handle");
   let state: State<SubTimerState> = app.state();
-  let mut guard = state.timer_id.lock().unwrap();
+  let mut guard = state.timer_id.lock().await;
 
-  if let Some(timer_id) = *guard {
-    clear_interval(timer_id);
+  if *guard != 0 {
+    clear_interval(*guard);
   }
 
   let settings = get_settings(&app).await?;
@@ -43,8 +43,7 @@ pub async fn start_auto_update_subscriptions() -> Result<()> {
     "Starting auto update subscriptions every {} minutes",
     settings.sub_update_interval
   );
-  let timer_id = set_interval!(auto_update, interval);
-  *guard = Some(timer_id);
+  *guard = set_interval!(auto_update, interval);
 
   Ok(())
 }

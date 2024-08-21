@@ -12,7 +12,10 @@ use std::fs;
 
 use app_handle::set_app_handle;
 use command::{
-  endpoint::{get_current_endpoint, select_fastest_endpoint, set_current_endpoint, XrayState},
+  endpoint::{
+    get_current_endpoint, select_fastest_endpoint, set_current_endpoint,
+    start_check_current_endpoint, XrayState,
+  },
   subscription::{update_subscription, update_subscriptions},
   update_geosites,
 };
@@ -228,6 +231,7 @@ fn main() {
       // 开启计时器
       tauri::async_runtime::block_on(async {
         let _ = start_auto_update_subscriptions().await;
+        let _ = start_check_current_endpoint().await;
       });
 
       Ok(())

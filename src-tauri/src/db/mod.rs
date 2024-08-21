@@ -24,7 +24,10 @@ use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
 use website::Website;
 
-use crate::error::Result;
+use crate::{
+  command::endpoint::start_check_current_endpoint, error::Result,
+  timers::subscription::start_auto_update_subscriptions,
+};
 
 const CURRENT_DB_VERSION: u32 = 3;
 
@@ -301,16 +304,21 @@ pub async fn insert_flow(app: &AppHandle, doc: Flow) -> Result<()> {
 #[specta::specta]
 pub async fn db_set_settings(state: State<'_, DbState>, settings: Settings) -> Result<()> {
   let all = query::<SettingsTable>(&state).await?;
-  let mut db_guard = state.db.lock().await;
-  let db = db_guard.as_mut().expect("Database not intialized");
-  let settings = Json::from(settings);
+  {
+    let mut db_guard = state.db.lock().await;
+    let db = db_guard.as_mut().expect("Database not intialized");
+    let settings = Json::from(settings);
 
-  if all.is_empty() {
-    SettingsTable { id: 1, settings }.insert(db).await?;
-  } else {
-    let s = &all[0];
-    s.update_partial().settings(settings).update(db).await?;
+    if all.is_empty() {
+      SettingsTable { id: 1, settings }.insert(db).await?;
+    } else {
+      let s = &all[0];
+      s.update_partial().settings(settings).update(db).await?;
+    }
   }
+
+  start_auto_update_subscriptions().await?;
+  start_check_current_endpoint().await?;
 
   Ok(())
 }

@@ -1,4 +1,5 @@
 pub mod endpoint;
+pub mod flow;
 pub mod log;
 pub mod settings;
 pub mod subscription;
@@ -7,6 +8,7 @@ use std::sync::Arc;
 
 use ::log::debug;
 use endpoint::Endpoint;
+use flow::Flow;
 use log::Log;
 use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
@@ -63,6 +65,13 @@ async fn create_temp_tables(db: &mut SqliteConnection) -> Result<()> {
     "CREATE TEMP TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, log TEXT NOT NULL)",
     Log::table_name(),
     Log::primary_key().unwrap()
+  );
+  db.execute(sql.as_str()).await?;
+
+  let sql = format!(
+    "CREATE TEMP TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, ts INTEGER NOT NULL, download INTEGER NOT NULL, upload INTEGER NOT NULL)",
+    Flow::table_name(),
+    Flow::primary_key().unwrap()
   );
   db.execute(sql.as_str()).await?;
 
@@ -239,7 +248,41 @@ pub async fn insert_log(app: &AppHandle, log: String) -> Result<()> {
   let mut db_guard = state.db.lock().await;
   let db = db_guard.as_mut().expect("Database not intialized");
 
-  Log::builder().log(log).insert(db).await?;
+  let log = Log::builder().log(log).insert(db).await?;
+
+  let db = db_guard.as_mut().expect("Database not intialized");
+  let sql = format!("DELETE FROM {} WHERE id < ?", Log::table_name());
+  ormlite::query(&sql)
+    .bind(log.id - 128)
+    .fetch_optional(db)
+    .await?;
+
+  notify_change::<Log>(app)?;
+
+  Ok(())
+}
+
+pub async fn insert_flow(app: &AppHandle, doc: Flow) -> Result<()> {
+  let state: State<DbState> = app.state();
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  let flow = Flow::builder()
+    .ts(doc.ts)
+    .download(doc.download)
+    .upload(doc.upload)
+    .insert(db)
+    .await?;
+
+  let db = db_guard.as_mut().expect("Database not intialized");
+  let sql = format!("DELETE FROM {} WHERE id < ?", Flow::table_name());
+  ormlite::query(&sql)
+    .bind(flow.id - 64)
+    .fetch_optional(db)
+    .await?;
+
+  // 通知数据库变动
+  notify_change::<Flow>(app)?;
 
   Ok(())
 }
@@ -345,12 +388,28 @@ pub async fn db_count_endpoints(state: State<'_, DbState>) -> Result<u32> {
 #[tauri::command]
 #[specta::specta]
 pub async fn db_query_logs(state: State<'_, DbState>) -> Result<Vec<Log>> {
-  query::<Log>(&state).await
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  let items = Log::select()
+    .order_desc("id")
+    .limit(128)
+    .fetch_all(db)
+    .await?;
+  Ok(items)
 }
 
-/// 查询日志数量
+/// 查询流量记录
 #[tauri::command]
 #[specta::specta]
-pub async fn db_count_logs(state: State<'_, DbState>) -> Result<u32> {
-  count::<Log>(&state).await
+pub async fn db_query_flows(state: State<'_, DbState>) -> Result<Vec<Flow>> {
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  let items = Flow::select()
+    .order_desc("ts")
+    .limit(64)
+    .fetch_all(db)
+    .await?;
+  Ok(items)
 }

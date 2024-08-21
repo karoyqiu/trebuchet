@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { reloadCurrent } from '../api/currentEndpoint';
 import { reloadUpdatingSubs } from '../api/updatingSubs';
 import { reloadEndpoints } from './endpoint';
+import { reloadFlowLogs } from './flowLog';
 import { reloadLogs } from './logEntry';
 import { reloadSubscriptions } from './subscription';
 
@@ -12,6 +13,7 @@ const useListenDbChange = () => {
       listen('app://db/subscription', reloadSubscriptions),
       listen('app://db/endpoint', reloadEndpoints),
       listen('app://db/log', reloadLogs),
+      listen('app://db/flow', reloadFlowLogs),
       listen('app://endpoint/current', reloadCurrent),
       listen('app://subscription/updating', reloadUpdatingSubs),
     ]);

@@ -1,6 +1,6 @@
+import type { Event } from '@tauri-apps/api/event';
+import { useCallback } from 'react';
 import { entity } from 'simpler-state';
-import db from '../db';
-import FlowLog from '../db/flowLog';
 import useEvent from './useEvent';
 
 type AllStats = { totalDownload: number; totalUpload: number; uptime: number };
@@ -23,28 +23,19 @@ const stats = entity<Stats>({
 const useStats = () => {
   const s = stats.use();
 
-  useEvent<AllStats>('app://stats', (event) => {
-    const flow: FlowLog = {
-      ts: Date.now(),
-      download: Math.max(0, event.payload.totalDownload - s.totalDownload),
-      upload: Math.max(0, event.payload.totalUpload - s.totalUpload),
-    };
-
-    // 保留 2 分钟内的数据
-    db.flowLogs
-      .where('ts')
-      .below(flow.ts - 2 * 60 * 1000)
-      .delete()
-      .catch(() => {});
-    db.flowLogs.add(flow).catch(() => {});
+  const handleStats = useCallback((event: Event<AllStats>) => {
+    const deltaDownload = Math.max(0, event.payload.totalDownload - s.totalDownload);
+    const deltaUpload = Math.max(0, event.payload.totalUpload - s.totalUpload);
 
     stats.set({
       ...event.payload,
       connected: true,
-      deltaDownload: flow.download,
-      deltaUpload: flow.upload,
+      deltaDownload,
+      deltaUpload,
     });
-  });
+  }, []);
+
+  useEvent<AllStats>('app://stats', handleStats);
 
   return s;
 };

@@ -1,13 +1,23 @@
-use crate::{app_handle::get_app_handle, error::Result};
+use std::sync::LazyLock;
+
+use crate::{
+  app_handle::get_app_handle,
+  db::{flow::Flow, insert_flow},
+  error::Result,
+};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use tauri::{api::process::Command, async_runtime::spawn, Manager};
+use tauri::{
+  api::process::Command,
+  async_runtime::{spawn, Mutex},
+  Manager,
+};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct XrayStats {
-  total_download: u64,
-  total_upload: u64,
+  total_download: i64,
+  total_upload: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,16 +34,18 @@ struct StatObject {
 #[derive(Debug, Serialize, Deserialize)]
 struct SysObject {
   #[serde(rename(deserialize = "Uptime"))]
-  uptime: u64,
+  uptime: i64,
 }
 
-#[derive(Clone, Serialize, Deserialize, Type)]
+#[derive(Clone, Default, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AllStats {
-  total_download: u64,
-  total_upload: u64,
-  uptime: u64,
+  total_download: i64,
+  total_upload: i64,
+  uptime: i64,
 }
+
+static LAST_STATS: LazyLock<Mutex<AllStats>> = LazyLock::new(|| Mutex::new(AllStats::default()));
 
 async fn query_stats(api_port: u16) -> Result<XrayStats> {
   let output = Command::new_sidecar("xray")?
@@ -86,15 +98,30 @@ pub(crate) async fn query_all_stats(api_port: u16) -> Result<()> {
 
     let stats = stats.await??;
     let sys = sys.await??;
+    let stats = AllStats {
+      total_download: stats.total_download,
+      total_upload: stats.total_upload,
+      uptime: sys.uptime,
+    };
 
-    app.emit_all(
-      "app://stats",
-      AllStats {
-        total_download: stats.total_download,
-        total_upload: stats.total_upload,
-        uptime: sys.uptime,
-      },
-    )?;
+    app.emit_all("app://stats", &stats)?;
+
+    // 计算流量
+    let mut last = LAST_STATS.lock().await;
+    let flow = Flow {
+      id: 0,
+      ts: std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64,
+      download: stats.total_download - last.total_download,
+      upload: stats.total_upload - last.total_upload,
+    };
+    *last = stats;
+
+    spawn(async move {
+      insert_flow(&app, flow).await.unwrap();
+    });
   }
 
   Ok(())

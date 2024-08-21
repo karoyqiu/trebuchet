@@ -1,9 +1,7 @@
 import Dexie, { Table } from 'dexie';
-import type FlowLog from './flowLog';
 import type { Website } from './website';
 
 class Database extends Dexie {
-  flowLogs!: Table<FlowLog, number>;
   websites!: Table<Website, number>;
 
   constructor() {
@@ -11,7 +9,6 @@ class Database extends Dexie {
 
     this.version(5)
       .stores({
-        flowLogs: 'ts',
         websites: '++id',
       })
       .upgrade((tx) =>

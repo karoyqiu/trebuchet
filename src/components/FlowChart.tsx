@@ -8,10 +8,9 @@ import {
   Tooltip,
 } from 'chart.js';
 import 'chartjs-adapter-dayjs-4/dist/chartjs-adapter-dayjs-4.esm';
-import { useLiveQuery } from 'dexie-react-hooks';
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-import db from '../db';
+import { flowLogs } from '../db/flowLog';
 import { formatSpeed } from './Speedometer';
 
 ChartJS.register(Filler, LineElement, LinearScale, PointElement, Tooltip, ChartStreaming);
@@ -21,12 +20,12 @@ export default function FlowChart() {
     const style = getComputedStyle(document.documentElement);
     return [style.getPropertyValue('--su'), style.getPropertyValue('--er')];
   }, []);
-  const logs = useLiveQuery(() => db.flowLogs.reverse().limit(64).toArray(), []) ?? [];
+  const logs = flowLogs.use() ?? [];
 
   return (
     <Line
       data={{
-        labels: logs.map((log) => log.ts),
+        labels: logs.map((log) => log.ts * 1000),
         datasets: [
           {
             label: 'Upload',

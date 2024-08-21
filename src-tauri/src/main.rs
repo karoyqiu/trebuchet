@@ -18,8 +18,8 @@ use command::{
   update_geosites,
 };
 use db::{
-  db_count_endpoints, db_count_logs, db_count_subscriptions, db_get_settings,
-  db_insert_subscription, db_query_endpoints, db_query_logs, db_query_subscriptions,
+  db_count_endpoints, db_count_subscriptions, db_get_settings, db_insert_subscription,
+  db_query_endpoints, db_query_flows, db_query_logs, db_query_subscriptions,
   db_remove_subscription, db_set_settings, db_update_subscription, initialize,
   subscription::db_get_updating_subscription_ids, DbState,
 };
@@ -84,11 +84,11 @@ fn export_bindings() {
   tauri_specta::ts::export_with_cfg(
     collect_types![
       db_count_endpoints,
-      db_count_logs,
       db_count_subscriptions,
       db_get_settings,
       db_insert_subscription,
       db_query_endpoints,
+      db_query_flows,
       db_query_logs,
       db_query_subscriptions,
       db_remove_subscription,
@@ -233,11 +233,11 @@ fn main() {
     })
     .invoke_handler(tauri::generate_handler![
       db_count_endpoints,
-      db_count_logs,
       db_count_subscriptions,
       db_get_settings,
       db_insert_subscription,
       db_query_endpoints,
+      db_query_flows,
       db_query_logs,
       db_query_subscriptions,
       db_remove_subscription,

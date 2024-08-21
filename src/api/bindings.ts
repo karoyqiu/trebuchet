@@ -18,13 +18,6 @@ export function dbCountEndpoints() {
 }
 
 /**
- * 查询日志数量
- */
-export function dbCountLogs() {
-    return invoke()<number>("db_count_logs")
-}
-
-/**
  * 查询订阅数量
  */
 export function dbCountSubscriptions() {
@@ -50,6 +43,13 @@ export function dbInsertSubscription(doc: Subscription) {
  */
 export function dbQueryEndpoints() {
     return invoke()<Endpoint[]>("db_query_endpoints")
+}
+
+/**
+ * 查询流量记录
+ */
+export function dbQueryFlows() {
+    return invoke()<Flow[]>("db_query_flows")
 }
 
 /**
@@ -148,6 +148,10 @@ export type Settings = { socksPort: number; httpPort: number; allowLan: boolean;
  * 节点
  */
 export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }
+/**
+ * 流量记录
+ */
+export type Flow = { id: number; ts: number; download: number; upload: number }
 /**
  * Xray 日志
  */

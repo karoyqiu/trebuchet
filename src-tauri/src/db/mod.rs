@@ -1,11 +1,13 @@
 pub mod endpoint;
+pub mod log;
 pub mod settings;
 pub mod subscription;
 
 use std::sync::Arc;
 
+use ::log::debug;
 use endpoint::Endpoint;
-use log::debug;
+use log::Log;
 use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
   sqlite::{
@@ -43,15 +45,28 @@ pub async fn initialize(app_handle: &AppHandle, readonly: bool) -> Result<Sqlite
     .journal_mode(SqliteJournalMode::Wal)
     .synchronous(SqliteSynchronous::Normal)
     .foreign_keys(true)
+    .pragma("temp_store", "MEMORY")
     .pragma("optimize", "0x10002")
     .create_if_missing(!readonly)
     .optimize_on_close(!readonly, None)
     .read_only(readonly);
-  let mut db = SqliteConnection::connect_with(&options).await?;
 
+  let mut db = SqliteConnection::connect_with(&options).await?;
+  create_temp_tables(&mut db).await?;
   upgrade_if_needed(&mut db).await?;
 
   Ok(db)
+}
+
+async fn create_temp_tables(db: &mut SqliteConnection) -> Result<()> {
+  let sql = format!(
+    "CREATE TEMP TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, log TEXT NOT NULL)",
+    Log::table_name(),
+    Log::primary_key().unwrap()
+  );
+  db.execute(sql.as_str()).await?;
+
+  Ok(())
 }
 
 async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
@@ -219,6 +234,16 @@ pub async fn get_settings(app: &AppHandle) -> Result<Settings> {
   db_get_settings(state).await
 }
 
+pub async fn insert_log(app: &AppHandle, log: String) -> Result<()> {
+  let state: State<DbState> = app.state();
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  Log::builder().log(log).insert(db).await?;
+
+  Ok(())
+}
+
 /// 保存设置
 #[tauri::command]
 #[specta::specta]
@@ -314,4 +339,18 @@ pub async fn db_query_endpoints(state: State<'_, DbState>) -> Result<Vec<Endpoin
 #[specta::specta]
 pub async fn db_count_endpoints(state: State<'_, DbState>) -> Result<u32> {
   count::<Endpoint>(&state).await
+}
+
+/// 查询日志
+#[tauri::command]
+#[specta::specta]
+pub async fn db_query_logs(state: State<'_, DbState>) -> Result<Vec<Log>> {
+  query::<Log>(&state).await
+}
+
+/// 查询日志数量
+#[tauri::command]
+#[specta::specta]
+pub async fn db_count_logs(state: State<'_, DbState>) -> Result<u32> {
+  count::<Log>(&state).await
 }

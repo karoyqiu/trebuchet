@@ -1,18 +1,18 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::anyhow;
-use log::{debug, trace, warn};
+use log::{debug, info, warn};
 use serde_json::{json, Value};
 use tauri::{
   api::process::{Command, CommandChild, CommandEvent, Encoding},
-  AppHandle, Manager,
+  AppHandle,
 };
 use tokio::sync::mpsc::Receiver;
 
 use crate::{
   app_handle::get_app_handle,
   command::get_available_port,
-  db::{endpoint::Endpoint, get_settings},
+  db::{endpoint::Endpoint, get_settings, insert_log},
   error::{Error, Result},
 };
 
@@ -78,6 +78,10 @@ impl Xray {
         .encoding(Encoding::for_label(b"utf-8").unwrap());
 
       let (rx, child) = cmd.spawn()?;
+      let log = format!("[{}] Xray started for {}", child.pid(), self.ep.name);
+      info!("{}", &log);
+      insert_log(&app, log).await?;
+
       self.filename = Some(filename);
       self.child = Some(child);
       self.rx = Some(rx);
@@ -107,14 +111,20 @@ impl Xray {
 
   /// 等待进程运行
   pub async fn wait_for_started(&mut self) -> Result<()> {
+    let pid = if let Some(child) = &self.child {
+      child.pid()
+    } else {
+      0
+    };
+
     if let Some(mut rx) = self.rx.take() {
       while let Some(event) = rx.recv().await {
         let app = get_app_handle();
 
-        if send_event(&app, event) {
+        if send_event(&app, pid, event).await? {
           tauri::async_runtime::spawn(async move {
             while let Some(event) = rx.recv().await {
-              send_event(&app, event);
+              send_event(&app, pid, event).await.unwrap();
             }
 
             rx.close();
@@ -390,28 +400,31 @@ async fn get_inbound_objects(for_test: bool) -> Result<(Vec<Value>, u16)> {
   Ok((inbounds, port))
 }
 
-fn send_event(app: &Option<AppHandle>, event: CommandEvent) -> bool {
+async fn send_event(app: &Option<AppHandle>, pid: u32, event: CommandEvent) -> Result<bool> {
   if let Some(ref app) = app {
     match event {
       CommandEvent::Stderr(line) | CommandEvent::Stdout(line) | CommandEvent::Error(line) => {
-        let line = line.trim();
-        //trace!("Xray: {}", line);
-        let _ = app.emit_all("app://xray/log", line);
+        let line = format!("[{}] {}", pid, line.trim());
+        let started = line.contains("Xray") && line.contains("started");
 
-        return line.contains("Xray") && line.contains("started");
+        insert_log(app, line).await?;
+
+        return Ok(started);
       }
 
       CommandEvent::Terminated(payload) => {
-        trace!("Xray terminated");
-        let _ = app.emit_all(
-          "app://xray/log",
-          format!("Xray terminated: code {}", payload.code.unwrap_or(-1)),
+        let line = format!(
+          "[{}] Xray terminated with code {}",
+          pid,
+          payload.code.unwrap_or(-1)
         );
+        info!("{}", &line);
+        insert_log(app, line).await?;
       }
 
       _ => {}
     }
   }
 
-  false
+  Ok(false)
 }

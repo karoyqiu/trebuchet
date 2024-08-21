@@ -30,7 +30,7 @@ pub async fn update_subscriptions(app: AppHandle) -> Result<()> {
   while let Some(_) = set.join_next().await {}
   info!("All subscriptions updated");
 
-  //select_fastest_endpoint(app).await?;
+  select_fastest_endpoint(app).await?;
 
   Ok(())
 }

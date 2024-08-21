@@ -1,7 +1,6 @@
-import { Form, Formik } from 'formik';
-import React from 'react';
-import { websiteSchema, type Website } from '../db/website';
-import TextField from './TextField';
+import { forwardRef, useEffect, useState } from 'react';
+import { type Website } from '../db/website';
+import TextInput from './TextInput';
 
 type WebsiteDialogProps = {
   title: string;
@@ -9,35 +8,49 @@ type WebsiteDialogProps = {
   onClose: (website?: Website) => Promise<void> | void;
 };
 
-const WebsiteDialog = React.forwardRef<HTMLDialogElement, WebsiteDialogProps>(
+const WebsiteDialog = forwardRef<HTMLDialogElement, WebsiteDialogProps>(
   function WebsiteDialog(props, ref) {
     const { title, website, onClose } = props;
+    const [values, setValues] = useState(website);
+
+    useEffect(() => {
+      setValues(website);
+    }, [website]);
 
     return (
       <dialog className="modal" ref={ref}>
         <div className="modal-box">
           <h3 className="font-bold text-lg">{title}</h3>
-          <Formik
-            initialValues={website}
-            enableReinitialize
-            validationSchema={websiteSchema}
-            validateOnChange={false}
-            validateOnBlur={false}
-            onSubmit={onClose}
+          <form
+            className="flex flex-col"
+            method="dialog"
+            autoComplete="off"
+            onSubmit={() => onClose(values)}
           >
-            <Form autoComplete="off" autoSave="off" className="flex flex-col" method="dialog">
-              <TextField name="name" label="Name" required />
-              <TextField name="url" label="URL" required />
-              <div className="modal-action">
-                <button className="btn" type="button" onClick={() => onClose()}>
-                  Cancel
-                </button>
-                <button className="btn btn-primary" type="submit">
-                  {website.id ? 'Save' : 'Add'}
-                </button>
-              </div>
-            </Form>
-          </Formik>
+            <TextInput
+              name="name"
+              label="Name"
+              required
+              value={values.name}
+              onChange={(event) => setValues({ ...values, name: event.target.value })}
+            />
+            <TextInput
+              name="url"
+              type="url"
+              label="URL"
+              required
+              value={values.url}
+              onChange={(event) => setValues({ ...values, url: event.target.value })}
+            />
+            <div className="modal-action">
+              <button className="btn" type="button" onClick={() => onClose()}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" type="submit">
+                {website.id ? 'Save' : 'Add'}
+              </button>
+            </div>
+          </form>
         </div>
       </dialog>
     );

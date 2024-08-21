@@ -32,7 +32,7 @@ const WebsiteSelectDialog = React.forwardRef<HTMLDialogElement, WebsiteSelectDia
               className="btn"
               type="button"
               onClick={() => {
-                setWebsite({ id: 0, name: '', url: '' });
+                setWebsite({ id: website.id - 1, name: '', url: '' });
                 addRef.current?.showModal();
               }}
             >

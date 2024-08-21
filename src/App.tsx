@@ -1,10 +1,8 @@
 import { getMatches } from '@tauri-apps/api/cli';
 import { appWindow } from '@tauri-apps/api/window';
-import { SnackbarProvider } from 'notistack';
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import useStats from './api/useStats';
-import Alert from './components/Alert';
 import ConnectionState from './components/ConnectionState';
 import InputBoxProvider from './components/InputBoxProvider';
 import LinkMenuItem from './components/LinkMenuItem';
@@ -34,10 +32,6 @@ function App() {
 
   return (
     <div className="flex w-full h-full">
-      <SnackbarProvider
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        Components={{ default: Alert, success: Alert, error: Alert, warning: Alert, info: Alert }}
-      />
       <div className="flex flex-col w-48 bg-base-300">
         <div className="px-6 pt-3">
           <Speedometer

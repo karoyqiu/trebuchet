@@ -25,6 +25,7 @@ const WebsiteDialog = forwardRef<HTMLDialogElement, WebsiteDialogProps>(
             className="flex flex-col"
             method="dialog"
             autoComplete="off"
+            autoSave="off"
             onSubmit={() => onClose(values)}
           >
             <TextInput

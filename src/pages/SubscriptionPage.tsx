@@ -2,6 +2,7 @@ import AddIcon from '@material-symbols/svg-400/outlined/add.svg?react';
 import UpdateIcon from '@material-symbols/svg-400/outlined/update.svg?react';
 import React from 'react';
 import { dbInsertSubscription, updateSubscriptions } from '../api/bindings';
+import CommandButton from '../components/CommandButton';
 import SubscriptionDialog from '../components/SubscriptionDialog';
 import SubscriptionList from '../components/SubscriptionList';
 import { Subscription } from '../db/subscription';
@@ -27,10 +28,10 @@ export default function SubscriptionPage() {
           <AddIcon />
           Add
         </button>
-        <button className="btn btn-ghost join-item" onClick={() => updateSubscriptions()}>
+        <CommandButton className="btn btn-ghost join-item" onClick={updateSubscriptions}>
           <UpdateIcon />
           Update all
-        </button>
+        </CommandButton>
       </div>
       <div className="divider m-0 h-0" />
       <div className="min-h-0 grow overflow-y-auto">

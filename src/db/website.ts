@@ -1,15 +1,11 @@
-import { object, string } from 'yup';
+import { entity } from 'simpler-state';
+import { dbQueryWebsites } from '../api/bindings';
 
-/** 站点 */
-export interface Website {
-  id?: number;
-  /** 名称 */
-  name: string;
-  /** 地址 */
-  url: string;
-}
+export type { Website } from '../api/bindings';
 
-export const websiteSchema = object({
-  name: string().required(),
-  url: string().required(),
-});
+export const websites = entity(dbQueryWebsites());
+
+export const reloadWebsites = async () => {
+  const items = await dbQueryWebsites();
+  websites.set(items);
+};

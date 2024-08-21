@@ -1,96 +1,43 @@
-import { invoke } from '@tauri-apps/api/tauri';
-import React from 'react';
-import db from '../db';
-import FlowLog from '../db/flowLog';
+import type { Event } from '@tauri-apps/api/event';
+import { useCallback } from 'react';
+import { entity } from 'simpler-state';
+import useEvent from './useEvent';
 
-type Stats = {
-  totalDownload: number;
-  totalUpload: number;
+type AllStats = { totalDownload: number; totalUpload: number; uptime: number };
+
+type Stats = AllStats & {
   deltaDownload: number;
   deltaUpload: number;
-  uptime: number;
   connected: boolean;
 };
 
-const queryStats = async () => {
-  const stats = {
-    totalDownload: 0,
-    totalUpload: 0,
-  };
-
-  if (window.xray.apiPort > 0) {
-    try {
-      const result = await invoke<Stats>('query_stats', { apiPort: window.xray.apiPort });
-      stats.totalUpload = result.totalUpload;
-      stats.totalDownload = result.totalDownload;
-    } catch (e) {
-      // Do nothing
-    }
-  }
-
-  return stats;
-};
-
-const querySys = async () => {
-  const stats = {
-    uptime: 0,
-    connected: false,
-  };
-
-  if (window.xray.apiPort > 0) {
-    try {
-      const result = await invoke<Stats>('query_sys', { apiPort: window.xray.apiPort });
-      stats.uptime = result.uptime;
-      stats.connected = true;
-    } catch (e) {
-      // Do nothing
-    }
-  }
-
-  return stats;
-};
+const stats = entity<Stats>({
+  totalDownload: 0,
+  totalUpload: 0,
+  deltaDownload: 0,
+  deltaUpload: 0,
+  uptime: 0,
+  connected: false,
+});
 
 const useStats = () => {
-  const [stats, setStats] = React.useState<Stats>({
-    totalDownload: 0,
-    totalUpload: 0,
-    deltaDownload: 0,
-    deltaUpload: 0,
-    uptime: 0,
-    connected: false,
-  });
+  const s = stats.use();
 
-  React.useEffect(() => {
-    const timer = setInterval(async () => {
-      const [s, sys] = await Promise.all([queryStats(), querySys()]);
-      setStats((old) => {
-        const flow: FlowLog = {
-          ts: Date.now(),
-          download: Math.max(0, s.totalDownload - old.totalDownload),
-          upload: Math.max(0, s.totalUpload - old.totalUpload),
-        };
+  const handleStats = useCallback((event: Event<AllStats>) => {
+    const deltaDownload = Math.max(0, event.payload.totalDownload - s.totalDownload);
+    const deltaUpload = Math.max(0, event.payload.totalUpload - s.totalUpload);
 
-        // 保留 2 分钟内的数据
-        db.flowLogs
-          .where('ts')
-          .below(flow.ts - 2 * 60 * 1000)
-          .delete()
-          .catch(() => {});
-        db.flowLogs.add(flow).catch(() => {});
+    stats.set({
+      ...event.payload,
+      connected: true,
+      deltaDownload,
+      deltaUpload,
+    });
+  }, []);
 
-        return {
-          ...s,
-          ...sys,
-          deltaDownload: flow.download,
-          deltaUpload: flow.upload,
-        };
-      });
-    }, 1000);
+  useEvent<AllStats>('app://stats', handleStats);
 
-    return () => clearInterval(timer);
-  }, [setStats]);
-
-  return stats;
+  return s;
 };
 
 export default useStats;

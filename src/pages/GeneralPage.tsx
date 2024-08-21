@@ -1,12 +1,17 @@
 import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react';
 import { getVersion } from '@tauri-apps/api/app';
-import React from 'react';
+import { useRef } from 'react';
+import { entity } from 'simpler-state';
 import { disable, enable, isEnabled } from 'tauri-plugin-autostart-api';
-import { selectFastest } from '../api/currentEndpoint';
+import { selectFastestEndpoint, setCurrentEndpoint, type Settings } from '../api/bindings';
+import { current } from '../api/currentEndpoint';
 import { updateSettings, useSettings } from '../api/settings';
 import useInputBox from '../api/useInputBox';
 import FlowChart from '../components/FlowChart';
 import WebsiteSelectDialog from '../components/WebsiteSelectDialog';
+
+const versionEntity = entity(getVersion());
+const autoStartEntity = entity(isEnabled());
 
 const min = new Intl.NumberFormat(navigator.language, {
   style: 'unit',
@@ -14,20 +19,22 @@ const min = new Intl.NumberFormat(navigator.language, {
 });
 
 export default function GeneralPage() {
-  const [version, setVersion] = React.useState('');
-  const [autoStart, setAutoStart] = React.useState(false);
+  const version = versionEntity.use() ?? '';
+  const autoStart = autoStartEntity.use() ?? false;
   const prompt = useInputBox();
   const settings = useSettings();
-  const websiteRef = React.useRef<HTMLDialogElement>(null);
+  const websiteRef = useRef<HTMLDialogElement>(null);
+  const cur = current.use();
 
-  React.useEffect(() => {
-    getVersion()
-      .then(setVersion)
-      .catch(() => {});
-    isEnabled()
-      .then(setAutoStart)
-      .catch(() => {});
-  }, []);
+  const updateAndRestart = async (delta: Partial<Settings>) => {
+    await updateSettings(delta);
+
+    if (cur) {
+      await setCurrentEndpoint(cur);
+    } else {
+      await selectFastestEndpoint();
+    }
+  };
 
   return (
     <div className="grid grid-cols-[1fr_auto_auto] items-center p-12 gap-4 h-full text-lg">
@@ -47,8 +54,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ socksPort: value });
-            await selectFastest(true);
+            await updateAndRestart({ socksPort: value });
           }
         }}
       >
@@ -67,8 +73,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ httpPort: value });
-            await selectFastest(true);
+            await updateAndRestart({ httpPort: value });
           }
         }}
       >
@@ -83,8 +88,7 @@ export default function GeneralPage() {
           className="toggle toggle-success"
           checked={!!settings.allowLan}
           onChange={async (event) => {
-            updateSettings({ allowLan: event.target.checked });
-            await selectFastest(true);
+            await updateAndRestart({ allowLan: event.target.checked });
           }}
         />
       </label>
@@ -101,7 +105,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ subUpdateInterval: value });
+            await updateSettings({ subUpdateInterval: value });
           }
         }}
       >
@@ -120,7 +124,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ epTestInterval: value });
+            await updateSettings({ epTestInterval: value });
           }
         }}
       >
@@ -139,7 +143,7 @@ export default function GeneralPage() {
           });
 
           if (value) {
-            updateSettings({ epTestConcurrency: value });
+            await updateSettings({ epTestConcurrency: value });
           }
         }}
       >
@@ -159,9 +163,9 @@ export default function GeneralPage() {
       <WebsiteSelectDialog
         ref={websiteRef}
         url={settings.epTestUrl}
-        onClose={(value) => {
+        onClose={async (value) => {
           if (value) {
-            updateSettings({ epTestUrl: value });
+            await updateSettings({ epTestUrl: value });
           }
         }}
       />
@@ -174,7 +178,7 @@ export default function GeneralPage() {
           className="toggle toggle-success"
           checked={autoStart}
           onChange={async (event) => {
-            setAutoStart(event.target.checked);
+            autoStartEntity.set(event.target.checked);
 
             if (event.target.checked) {
               await enable();

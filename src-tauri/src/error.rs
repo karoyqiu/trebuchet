@@ -1,3 +1,5 @@
+use crate::db::endpoint::ParseEndpointError;
+
 // create the error type that represents all errors possible in our program
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -13,6 +15,16 @@ pub enum Error {
   Tauri(#[from] tauri::Error),
   #[error(transparent)]
   TauriApi(#[from] tauri::api::Error),
+  #[error(transparent)]
+  Db(#[from] ormlite::Error),
+  #[error(transparent)]
+  Sqlx(#[from] ormlite::SqlxError),
+  #[error(transparent)]
+  Base64Decode(#[from] base64::DecodeError),
+  #[error(transparent)]
+  FromUtf8(#[from] std::string::FromUtf8Error),
+  #[error(transparent)]
+  ParseEndpointError(#[from] ParseEndpointError),
 }
 
 // we must manually implement serde::Serialize

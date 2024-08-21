@@ -1,8 +1,6 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { omit } from 'radash';
 import React from 'react';
-import db from '../db';
-import { Website } from '../db/website';
+import { dbInsertWebsite, dbRemoveWebsite } from '../api/bindings';
+import { Website, websites as db } from '../db/website';
 import WebsiteDialog from './WebsiteDialog';
 
 type WebsiteSelectDialogProps = {
@@ -13,8 +11,8 @@ type WebsiteSelectDialogProps = {
 const WebsiteSelectDialog = React.forwardRef<HTMLDialogElement, WebsiteSelectDialogProps>(
   function WebsiteSelectDialog(props, ref) {
     const { url, onClose } = props;
-    const websites = useLiveQuery(() => db.websites.toArray(), []) ?? [];
-    const [website, setWebsite] = React.useState<Website>({ name: '', url: '' });
+    const websites = db.use() ?? [];
+    const [website, setWebsite] = React.useState<Website>({ id: 0, name: '', url: '' });
     const selectRef = React.useRef<HTMLSelectElement>(null);
     const addRef = React.useRef<HTMLDialogElement>(null);
 
@@ -34,7 +32,7 @@ const WebsiteSelectDialog = React.forwardRef<HTMLDialogElement, WebsiteSelectDia
               className="btn"
               type="button"
               onClick={() => {
-                setWebsite({ name: '', url: '' });
+                setWebsite({ id: website.id - 1, name: '', url: '' });
                 addRef.current?.showModal();
               }}
             >
@@ -47,7 +45,7 @@ const WebsiteSelectDialog = React.forwardRef<HTMLDialogElement, WebsiteSelectDia
                 const current = websites.find((w) => w.url === selectRef.current?.value);
 
                 if (current?.id) {
-                  await db.websites.delete(current.id);
+                  await dbRemoveWebsite(current.id);
                 }
               }}
             >
@@ -69,7 +67,7 @@ const WebsiteSelectDialog = React.forwardRef<HTMLDialogElement, WebsiteSelectDia
             addRef.current?.close();
 
             if (value) {
-              await db.websites.add(omit(value, ['id']));
+              await dbInsertWebsite(value);
             }
           }}
         />

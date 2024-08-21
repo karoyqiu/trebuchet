@@ -3,6 +3,7 @@ pub mod flow;
 pub mod log;
 pub mod settings;
 pub mod subscription;
+pub mod website;
 
 use std::sync::Arc;
 
@@ -21,10 +22,11 @@ use ormlite::{
 use settings::{Settings, SettingsTable};
 use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
+use website::Website;
 
 use crate::error::Result;
 
-const CURRENT_DB_VERSION: u32 = 2;
+const CURRENT_DB_VERSION: u32 = 3;
 
 #[derive(Default)]
 pub struct DbState {
@@ -108,8 +110,15 @@ async fn upgrade_if_needed(db: &mut SqliteConnection) -> Result<()> {
     );
     db.execute(sql.as_str()).await?;
 
-    // let sql = format!("PRAGMA user_version = {}", CURRENT_DB_VERSION);
-    // db.execute(sql.as_str()).await?;
+    let sql = format!(
+      "CREATE TABLE IF NOT EXISTS {} ({} INTEGER PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL)",
+      Website::table_name(),
+      Website::primary_key().unwrap(),
+    );
+    db.execute(sql.as_str()).await?;
+
+    let sql = format!("PRAGMA user_version = {}", CURRENT_DB_VERSION);
+    db.execute(sql.as_str()).await?;
   }
 
   Ok(())
@@ -412,4 +421,38 @@ pub async fn db_query_flows(state: State<'_, DbState>) -> Result<Vec<Flow>> {
     .fetch_all(db)
     .await?;
   Ok(items)
+}
+
+/// 插入站点
+#[tauri::command]
+#[specta::specta]
+pub async fn db_insert_website(app: AppHandle, doc: Website) -> Result<()> {
+  let state: State<DbState> = app.state();
+  let mut db_guard = state.db.lock().await;
+  let db = db_guard.as_mut().expect("Database not intialized");
+
+  Website::builder()
+    .name(doc.name)
+    .url(doc.url)
+    .insert(db)
+    .await?;
+
+  // 通知数据库变动
+  notify_change::<Website>(&app)?;
+
+  Ok(())
+}
+
+/// 删除站点
+#[tauri::command]
+#[specta::specta]
+pub async fn db_remove_website(app: AppHandle, id: i64) -> Result<()> {
+  remove::<Website>(&app, id).await
+}
+
+/// 查询站点
+#[tauri::command]
+#[specta::specta]
+pub async fn db_query_websites(state: State<'_, DbState>) -> Result<Vec<Website>> {
+  query::<Website>(&state).await
 }

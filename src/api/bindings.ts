@@ -39,6 +39,13 @@ export function dbInsertSubscription(doc: Subscription) {
 }
 
 /**
+ * 插入站点
+ */
+export function dbInsertWebsite(doc: Website) {
+    return invoke()<null>("db_insert_website", { doc })
+}
+
+/**
  * 查询节点
  */
 export function dbQueryEndpoints() {
@@ -67,10 +74,24 @@ export function dbQuerySubscriptions() {
 }
 
 /**
+ * 查询站点
+ */
+export function dbQueryWebsites() {
+    return invoke()<Website[]>("db_query_websites")
+}
+
+/**
  * 删除订阅
  */
 export function dbRemoveSubscription(id: number) {
     return invoke()<null>("db_remove_subscription", { id })
+}
+
+/**
+ * 删除站点
+ */
+export function dbRemoveWebsite(id: number) {
+    return invoke()<null>("db_remove_website", { id })
 }
 
 /**
@@ -85,13 +106,6 @@ export function dbSetSettings(settings: Settings) {
  */
 export function dbUpdateSubscription(doc: Subscription) {
     return invoke()<null>("db_update_subscription", { doc })
-}
-
-/**
- * 获取可用于侦听的 TCP 端口
- */
-export function getAvailablePort() {
-    return invoke()<number>("get_available_port")
 }
 
 /**
@@ -145,6 +159,14 @@ export type Subscription = { id: number; name: string; url: string; disabled: bo
  */
 export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
 /**
+ * 站点
+ */
+export type Website = { id: number; name: string; url: string }
+/**
+ * Xray 日志
+ */
+export type Log = { id: number; log: string }
+/**
  * 节点
  */
 export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }
@@ -152,7 +174,3 @@ export type Endpoint = { id: number; subId: number; uri: string; name: string; h
  * 流量记录
  */
 export type Flow = { id: number; ts: number; download: number; upload: number }
-/**
- * Xray 日志
- */
-export type Log = { id: number; log: string }

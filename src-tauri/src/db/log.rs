@@ -1,11 +1,11 @@
 use ormlite::Model;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use specta::Type;
 
 /// Xray 日志
-#[derive(Clone, Debug, Deserialize, Serialize, Type, Model)]
+#[derive(Clone, Debug, Serialize, Type, Model)]
 pub struct Log {
-  /// 节点 ID
+  /// 日志 ID
   #[ormlite(primary_key)]
   pub id: i64,
   /// 日志

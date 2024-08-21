@@ -6,6 +6,7 @@ import { reloadEndpoints } from './endpoint';
 import { reloadFlowLogs } from './flowLog';
 import { reloadLogs } from './logEntry';
 import { reloadSubscriptions } from './subscription';
+import { reloadWebsites } from './website';
 
 const useListenDbChange = () => {
   useEffect(() => {
@@ -14,6 +15,7 @@ const useListenDbChange = () => {
       listen('app://db/endpoint', reloadEndpoints),
       listen('app://db/log', reloadLogs),
       listen('app://db/flow', reloadFlowLogs),
+      listen('app://db/website', reloadWebsites),
       listen('app://endpoint/current', reloadCurrent),
       listen('app://subscription/updating', reloadUpdatingSubs),
     ]);

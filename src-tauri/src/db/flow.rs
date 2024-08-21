@@ -1,11 +1,11 @@
 use ormlite::Model;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use specta::Type;
 
 /// 流量记录
-#[derive(Clone, Debug, Deserialize, Serialize, Type, Model)]
+#[derive(Clone, Debug, Serialize, Type, Model)]
 pub struct Flow {
-  /// 节点 ID
+  /// 流量记录 ID
   #[ormlite(primary_key)]
   pub id: i64,
   /// 时间戳，ID

@@ -59,7 +59,7 @@ async fn test_latencies(app: AppHandle) -> Result<()> {
 
     tests.spawn(async move {
       let _permit = permit;
-      test_endpoint(&app, xray, &settings).await.unwrap();
+      let _ = test_endpoint(&app, xray, &settings).await;
     });
   }
 
@@ -146,17 +146,11 @@ pub async fn select_fastest_endpoint(app: AppHandle) -> Result<i64> {
   Ok(ep.id)
 }
 
-async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> Result<()> {
+async fn test_endpoint(app: &AppHandle, xray: Xray, settings: &Settings) -> Result<()> {
   let ep = xray.endpoint().clone();
   info!("Testing endpoint {} - {}", ep.id, &ep.name);
-  xray.start("test").await?;
-  xray.wait_for_started().await?;
 
-  let latency = test_port(xray.port().unwrap(), &settings.ep_test_url)
-    .await
-    .unwrap_or(999999);
-  xray.stop().await?;
-
+  let latency = test_xray(xray, settings).await.unwrap_or(999999);
   debug!("Endpoint {} latency {}", ep.id, latency);
 
   let state: State<DbState> = app.state();
@@ -170,6 +164,18 @@ async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> 
   notify_change::<Endpoint>(app)?;
 
   Ok(())
+}
+
+async fn test_xray(mut xray: Xray, settings: &Settings) -> Result<i32> {
+  xray.start("test").await?;
+  xray.wait_for_started().await?;
+
+  let latency = test_port(xray.port().unwrap(), &settings.ep_test_url)
+    .await
+    .unwrap_or(999999);
+  xray.stop().await?;
+
+  Ok(latency)
 }
 
 async fn test_port(proxy_port: u16, url: &String) -> Result<i32> {

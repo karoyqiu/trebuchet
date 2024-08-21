@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::anyhow;
-use log::{debug, info, warn};
+use log::{info, warn};
 use serde_json::{json, Value};
 use tauri::{
   api::process::{Command, CommandChild, CommandEvent, Encoding},
@@ -134,7 +134,7 @@ impl Xray {
         }
       }
 
-      debug!("No more messages?");
+      warn!("[{}] No more messages?", pid);
     }
 
     Err(Error::Anyhow(anyhow!("No rx")))

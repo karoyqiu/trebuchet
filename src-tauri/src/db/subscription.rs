@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use log::{debug, warn};
+use log::{debug, error, warn};
 use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
   Model,
@@ -87,19 +87,26 @@ impl Subscription {
           continue;
         }
 
-        if let Ok(ep) = Endpoint::from_str(line) {
-          debug!("Endpoint: {:?}", &ep);
-          Endpoint::builder()
-            .sub_id(self.id)
-            .uri(ep.uri)
-            .name(ep.name)
-            .host(ep.host)
-            .port(ep.port)
-            .outbound(ep.outbound)
-            .insert(&mut *db)
-            .await?;
-        } else {
-          warn!("Error parse line {}", line);
+        match Endpoint::from_str(line) {
+          Ok(ep) => {
+            debug!("Endpoint: {:?}", &ep);
+            if let Err(e) = Endpoint::builder()
+              .sub_id(self.id)
+              .uri(ep.uri)
+              .name(ep.name)
+              .host(ep.host)
+              .port(ep.port)
+              .outbound(ep.outbound)
+              .insert(&mut *db)
+              .await
+            {
+              warn!("Error insert endpoint: {:?}", e);
+            }
+          }
+
+          Err(e) => {
+            error!("Error parse line {:?}", e);
+          }
         }
       }
 

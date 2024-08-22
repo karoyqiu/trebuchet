@@ -1,6 +1,6 @@
 use std::{collections::HashMap, str::FromStr};
 
-use base64::prelude::{Engine, BASE64_STANDARD};
+use base64::prelude::Engine;
 use log::debug;
 use ormlite::Model;
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,8 @@ use serde_json::{json, Value};
 use specta::Type;
 use thiserror::Error;
 use url::Url;
+
+use crate::db::base64::BASE64_STANDARD_MAY_PAD;
 
 use super::base64::try_base64_decode;
 
@@ -111,7 +113,7 @@ impl Endpoint {
   fn from_vmess(uri: &str) -> Result<Self, ParseEndpointError> {
     let full = String::from(uri);
     let uri = &uri[8..];
-    let params = BASE64_STANDARD.decode(uri)?;
+    let params = BASE64_STANDARD_MAY_PAD.decode(uri)?;
     debug!(
       "Decoded vmess: {}",
       String::from_utf8(params.clone()).unwrap()

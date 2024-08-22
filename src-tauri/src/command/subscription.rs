@@ -1,4 +1,4 @@
-use log::info;
+use log::{error, info};
 use ormlite::{Executor, TableMeta};
 use tauri::{AppHandle, Manager, State};
 use tokio::task::JoinSet;
@@ -30,7 +30,9 @@ pub async fn update_subscriptions(app: AppHandle) -> Result<()> {
 
     if !disabled {
       set.spawn(async move {
-        sub.update().await.unwrap();
+        if let Err(e) = sub.update().await {
+          error!("Subscription update error: {:?}", e);
+        }
       });
     }
   }

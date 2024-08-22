@@ -88,6 +88,7 @@ impl Subscription {
         }
 
         if let Ok(ep) = Endpoint::from_str(line) {
+          debug!("Endpoint: {:?}", &ep);
           Endpoint::builder()
             .sub_id(self.id)
             .uri(ep.uri)

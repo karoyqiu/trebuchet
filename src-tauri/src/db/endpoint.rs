@@ -213,7 +213,23 @@ impl Endpoint {
       let uri = Url::parse(&decoded)?;
       uri
     } else {
-      uri.clone()
+      let username: String = urlencoding::decode(uri.username())?.into();
+      let decoded = try_base64_decode(username.clone())?;
+
+      if username == decoded {
+        uri.clone()
+      } else {
+        let mut uri = uri.clone();
+
+        if let Some((username, password)) = decoded.split_once(':') {
+          uri.set_username(username).unwrap();
+          uri.set_password(Some(password)).unwrap();
+        } else {
+          uri.set_username(&decoded).unwrap();
+        }
+
+        uri
+      }
     };
 
     ep.host = String::from(uri.host_str().unwrap());
@@ -242,6 +258,7 @@ impl FromStr for Endpoint {
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let uri = Url::parse(s)?;
+    debug!("URL: {:?}", &uri);
 
     match uri.scheme() {
       "vmess" => Self::from_vmess(s),

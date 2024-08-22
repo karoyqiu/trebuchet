@@ -32,7 +32,10 @@ use tauri::{
   SystemTrayMenuItem, WindowBuilder,
 };
 use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_log::LogTarget;
+use tauri_plugin_log::{
+  fern::colors::{Color, ColoredLevelConfig},
+  LogTarget,
+};
 use timers::subscription::{start_auto_update_subscriptions, SubTimerState};
 use tokio_schedule::{every, Job};
 
@@ -166,6 +169,13 @@ fn main() {
         .level(LevelFilter::Warn)
         .level_for("trebuchet", LevelFilter::Trace)
         .level_for("webview", LevelFilter::Trace)
+        .with_colors(
+          ColoredLevelConfig::new()
+            .error(Color::Red)
+            .warn(Color::Yellow)
+            .info(Color::Green)
+            .debug(Color::Blue),
+        )
         .build(),
     )
     .plugin(tauri_plugin_autostart::init(

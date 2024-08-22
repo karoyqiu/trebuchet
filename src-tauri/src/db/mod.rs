@@ -1,3 +1,4 @@
+mod base64;
 pub mod endpoint;
 pub mod flow;
 pub mod log;

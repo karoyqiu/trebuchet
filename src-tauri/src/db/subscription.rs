@@ -5,8 +5,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use base64::{prelude::BASE64_STANDARD, Engine};
-use log::debug;
+use log::{debug, warn};
 use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
   Model,
@@ -18,7 +17,7 @@ use tauri::{AppHandle, Manager, State};
 
 use crate::{
   app_handle::get_app_handle,
-  db::notify_change,
+  db::{base64::try_base64_decode, notify_change},
   error::{Error, Result},
 };
 
@@ -61,9 +60,9 @@ impl Subscription {
       // 下载订阅
       let body = reqwest::get(&self.url).await?.text().await?;
       debug!("String: {}", &body);
-      // base64 解码
-      let body = BASE64_STANDARD.decode(body)?;
-      let body = String::from_utf8(body)?;
+
+      // 尝试 base64 解码
+      let body = try_base64_decode(body)?;
       debug!("Decoded: {}", &body);
 
       // 按行分割
@@ -88,16 +87,19 @@ impl Subscription {
           continue;
         }
 
-        let ep = Endpoint::from_str(line)?;
-        Endpoint::builder()
-          .sub_id(self.id)
-          .uri(ep.uri)
-          .name(ep.name)
-          .host(ep.host)
-          .port(ep.port)
-          .outbound(ep.outbound)
-          .insert(&mut *db)
-          .await?;
+        if let Ok(ep) = Endpoint::from_str(line) {
+          Endpoint::builder()
+            .sub_id(self.id)
+            .uri(ep.uri)
+            .name(ep.name)
+            .host(ep.host)
+            .port(ep.port)
+            .outbound(ep.outbound)
+            .insert(&mut *db)
+            .await?;
+        } else {
+          warn!("Error parse line {}", line);
+        }
       }
 
       notify_change::<Endpoint>(&app)?;

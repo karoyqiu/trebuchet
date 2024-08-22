@@ -4,6 +4,7 @@ use base64::prelude::{Engine, BASE64_STANDARD};
 use log::debug;
 use ormlite::Model;
 use serde::{Deserialize, Serialize};
+use serde_aux::prelude::deserialize_number_from_string;
 use serde_json::{json, Value};
 use specta::Type;
 use thiserror::Error;
@@ -54,6 +55,7 @@ struct VMessParams {
   //v: String,
   ps: String,
   add: String,
+  #[serde(deserialize_with = "deserialize_number_from_string")]
   port: u16,
   //#[serde(rename = "type")]
   //type_: String,
@@ -237,6 +239,7 @@ impl FromStr for Endpoint {
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let uri = Url::parse(s)?;
+    debug!("URL: {:?}", &uri);
 
     match uri.scheme() {
       "vmess" => Self::from_vmess(s),

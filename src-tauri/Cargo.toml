@@ -20,6 +20,7 @@ ormlite = { version = "0.18.0", features = ["sqlite"] }
 reqwest = { version = "0.11.18", features = ["deflate", "brotli", "gzip", "socks"] }
 scopeguard = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }
+serde-aux = { version = "4.5.0", default-features = false }
 serde_json = "1.0"
 specta = "1.0.5"
 tauri = { version = "1.7", features = ["cli", "fs-remove-file", "fs-write-file", "os-all", "path-all", "shell-sidecar", "system-tray", "window-show"] }

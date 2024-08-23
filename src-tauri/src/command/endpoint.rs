@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use log::{debug, info, warn};
+use log::{debug, info};
 use ormlite::TableMeta;
 use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
@@ -10,7 +10,7 @@ use ormlite::{
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
-use tokio_js_set_interval::{clear_interval, set_interval, set_interval_async};
+use tokio_js_set_interval::{clear_interval, set_interval_async};
 
 use crate::app_handle::get_app_handle;
 use crate::{
@@ -216,12 +216,10 @@ pub async fn start_check_current_endpoint() -> Result<()> {
     settings.ep_test_interval
   );
 
-  *guard = set_interval!(
-    || {
-      tauri::async_runtime::spawn(async {
-        check_current_endpoint().await.unwrap();
-      });
-    },
+  *guard = set_interval_async!(
+    || tokio::task::spawn(async {
+      check_current_endpoint().await.unwrap();
+    }),
     interval
   );
 
@@ -251,9 +249,9 @@ async fn check_current_endpoint() -> Result<()> {
     let latency = test_port(settings.socks_port, &settings.ep_test_url)
       .await
       .unwrap_or(999999);
+    info!("Current latency {}", latency);
 
-    if latency == 999999 {
-      warn!("Current endpoint is too slow.");
+    if latency >= 999999 {
       select_fastest_endpoint(app).await?;
     }
   }

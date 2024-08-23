@@ -151,13 +151,13 @@ export function dbGetUpdatingSubscriptionIds() {
 }
 
 /**
- * 设置
- */
-export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
-/**
  * 节点
  */
 export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }
+/**
+ * 设置
+ */
+export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
 /**
  * 站点
  */

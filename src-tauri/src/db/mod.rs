@@ -25,10 +25,7 @@ use subscription::Subscription;
 use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
 use website::Website;
 
-use crate::{
-  command::endpoint::start_check_current_endpoint, error::Result,
-  timers::subscription::start_auto_update_subscriptions,
-};
+use crate::{command::endpoint::start_check_current_endpoint, error::Result};
 
 const CURRENT_DB_VERSION: u32 = 3;
 
@@ -318,7 +315,7 @@ pub async fn db_set_settings(state: State<'_, DbState>, settings: Settings) -> R
     }
   }
 
-  start_auto_update_subscriptions().await?;
+  //start_auto_update_subscriptions().await?;
   start_check_current_endpoint().await?;
 
   Ok(())

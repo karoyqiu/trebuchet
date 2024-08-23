@@ -5,7 +5,6 @@ mod app_handle;
 mod command;
 mod db;
 mod error;
-mod timers;
 mod xray;
 
 use std::fs;
@@ -36,7 +35,6 @@ use tauri_plugin_log::{
   fern::colors::{Color, ColoredLevelConfig},
   LogTarget,
 };
-use timers::subscription::{start_auto_update_subscriptions, SubTimerState};
 use tokio_schedule::{every, Job};
 
 #[derive(Clone, serde::Serialize)]
@@ -203,7 +201,6 @@ fn main() {
     })
     .manage(DbState::default())
     .manage(XrayState::default())
-    .manage(SubTimerState::default())
     .setup(|app| {
       let resolver = app.path_resolver();
 
@@ -232,16 +229,11 @@ fn main() {
         *db_guard = Some(db);
       });
 
-      // 更新订阅
+      // 更新订阅并开启计时器
       let handle = app.handle();
       tauri::async_runtime::spawn(async move {
-        let _ = update_subscriptions(handle).await;
-      });
-
-      // 开启计时器
-      tauri::async_runtime::block_on(async {
-        let _ = start_auto_update_subscriptions().await;
-        let _ = start_check_current_endpoint().await;
+        update_subscriptions(handle).await.unwrap();
+        start_check_current_endpoint().await.unwrap();
       });
 
       Ok(())

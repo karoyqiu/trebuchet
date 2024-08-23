@@ -58,7 +58,12 @@ impl Subscription {
       }
 
       // 下载订阅
-      let body = reqwest::get(&self.url).await?.text().await?;
+      let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0")
+        .build()?;
+      let body = client.get(&self.url).send().await?;
+      let body = body.text().await?;
       debug!("String: {}", &body);
 
       // 尝试 base64 解码

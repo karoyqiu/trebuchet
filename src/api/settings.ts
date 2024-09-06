@@ -1,24 +1,5 @@
-import { entity, persistence } from 'simpler-state';
-import type { RuleType } from './xray/xray';
-
-interface Settings {
-  /** SOCKS 侦听端口 */
-  socksPort: number;
-  /** HTTP 侦听端口 */
-  httpPort: number;
-  /** 是否允许局域网连接 */
-  allowLan: boolean;
-  /** 订阅自动更新间隔，分钟 */
-  subUpdateInterval: number;
-  /** 节点自动测速间隔，分钟 */
-  epTestInterval: number;
-  /** 节点测速并发量 */
-  epTestConcurrency: number;
-  /** 测试用 URL */
-  epTestUrl: string;
-  /** 路由规则 */
-  rule: RuleType;
-}
+import { entity } from 'simpler-state';
+import { dbGetSettings, dbSetSettings, type Settings } from './bindings';
 
 const defaultSettings = Object.freeze<Settings>({
   socksPort: 1089,
@@ -32,7 +13,7 @@ const defaultSettings = Object.freeze<Settings>({
   rule: 'default',
 });
 
-const settings = entity(defaultSettings, [persistence('settings')]);
+const settings = entity(dbGetSettings());
 
 export const useSettings = () => {
   const s = settings.use();
@@ -48,7 +29,12 @@ export const getSettings = () => ({
   ...settings.get(),
 });
 
-const changeSettings = (value: Settings, change: Partial<Settings>) => ({ ...value, ...change });
-export const updateSettings = (change: Partial<Settings>) => settings.set(changeSettings, change);
+export const updateSettings = async (change: Partial<Settings>) => {
+  const s = getSettings();
+  const merged = { ...s, ...change };
+  await dbSetSettings(merged);
+
+  settings.set(merged);
+};
 
 export default settings;

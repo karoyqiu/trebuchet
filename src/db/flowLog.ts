@@ -1,9 +1,11 @@
-/** 流量记录 */
-export default interface FlowLog {
-  /** 时间戳，ID */
-  ts: number;
-  /** 下载速度，字节/秒 */
-  download: number;
-  /** 上传速度，字节/秒 */
-  upload: number;
-}
+import { entity } from 'simpler-state';
+import { dbQueryFlows } from '../api/bindings';
+
+export type { Flow as FlowLog } from '../api/bindings';
+
+export const flowLogs = entity(dbQueryFlows());
+
+export const reloadFlowLogs = async () => {
+  const items = await dbQueryFlows();
+  flowLogs.set(items);
+};

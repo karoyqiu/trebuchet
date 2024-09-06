@@ -1,17 +1,17 @@
-import { current, setCurrent } from '../api/currentEndpoint';
+import { setCurrentEndpoint } from '../api/bindings';
+import { current } from '../api/currentEndpoint';
 import { updateSettings, useSettings } from '../api/settings';
-import type { RuleType } from '../api/xray/xray';
 
 export default function RulePage() {
   const settings = useSettings();
 
-  const changeRule = async (rule: RuleType) => {
-    updateSettings({ rule });
+  const changeRule = async (rule: string) => {
+    await updateSettings({ rule });
 
     const cur = current.get();
 
     if (cur) {
-      await setCurrent(cur, true);
+      await setCurrentEndpoint(cur);
     }
   };
 

@@ -1,10 +1,10 @@
 import AddIcon from '@material-symbols/svg-400/outlined/add.svg?react';
 import UpdateIcon from '@material-symbols/svg-400/outlined/update.svg?react';
 import React from 'react';
-import { updateSubscriptions } from '../api/subscription';
+import { dbInsertSubscription, updateSubscriptions } from '../api/bindings';
+import CommandButton from '../components/CommandButton';
 import SubscriptionDialog from '../components/SubscriptionDialog';
 import SubscriptionList from '../components/SubscriptionList';
-import db from '../db';
 import { Subscription } from '../db/subscription';
 
 export default function SubscriptionPage() {
@@ -15,10 +15,10 @@ export default function SubscriptionPage() {
       ref.current?.close();
 
       if (values) {
-        await db.subs.add(values);
+        await dbInsertSubscription(values);
       }
     },
-    [ref]
+    [ref],
   );
 
   return (
@@ -28,16 +28,20 @@ export default function SubscriptionPage() {
           <AddIcon />
           Add
         </button>
-        <button className="btn btn-ghost join-item" onClick={() => updateSubscriptions()}>
+        <CommandButton className="btn btn-ghost join-item" onClick={updateSubscriptions}>
           <UpdateIcon />
           Update all
-        </button>
+        </CommandButton>
       </div>
       <div className="divider m-0 h-0" />
       <div className="min-h-0 grow overflow-y-auto">
         <SubscriptionList />
       </div>
-      <SubscriptionDialog ref={ref} onClose={addSub} sub={{ name: '', url: '' }} />
+      <SubscriptionDialog
+        ref={ref}
+        onClose={addSub}
+        sub={{ id: 0, name: '', url: '', disabled: null }}
+      />
     </div>
   );
 }

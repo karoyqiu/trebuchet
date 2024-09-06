@@ -5,14 +5,16 @@ mod app_handle;
 mod command;
 mod db;
 mod error;
-mod timers;
 mod xray;
 
 use std::fs;
 
 use app_handle::set_app_handle;
 use command::{
-  endpoint::{get_current_endpoint, select_fastest_endpoint, set_current_endpoint, XrayState},
+  endpoint::{
+    get_current_endpoint, select_fastest_endpoint, set_current_endpoint,
+    start_check_current_endpoint, XrayState,
+  },
   subscription::{update_subscription, update_subscriptions},
   update_geosites,
 };
@@ -29,8 +31,10 @@ use tauri::{
   SystemTrayMenuItem, WindowBuilder,
 };
 use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_log::LogTarget;
-use timers::subscription::{start_auto_update_subscriptions, SubTimerState};
+use tauri_plugin_log::{
+  fern::colors::{Color, ColoredLevelConfig},
+  LogTarget,
+};
 use tokio_schedule::{every, Job};
 
 #[derive(Clone, serde::Serialize)]
@@ -163,6 +167,13 @@ fn main() {
         .level(LevelFilter::Warn)
         .level_for("trebuchet", LevelFilter::Trace)
         .level_for("webview", LevelFilter::Trace)
+        .with_colors(
+          ColoredLevelConfig::new()
+            .error(Color::Red)
+            .warn(Color::Yellow)
+            .info(Color::Green)
+            .debug(Color::Blue),
+        )
         .build(),
     )
     .plugin(tauri_plugin_autostart::init(
@@ -190,7 +201,6 @@ fn main() {
     })
     .manage(DbState::default())
     .manage(XrayState::default())
-    .manage(SubTimerState::default())
     .setup(|app| {
       let resolver = app.path_resolver();
 
@@ -219,15 +229,11 @@ fn main() {
         *db_guard = Some(db);
       });
 
-      // 更新订阅
+      // 更新订阅并开启计时器
       let handle = app.handle();
       tauri::async_runtime::spawn(async move {
-        let _ = update_subscriptions(handle).await;
-      });
-
-      // 开启计时器
-      tauri::async_runtime::block_on(async {
-        let _ = start_auto_update_subscriptions().await;
+        update_subscriptions(handle).await.unwrap();
+        start_check_current_endpoint().await.unwrap();
       });
 
       Ok(())

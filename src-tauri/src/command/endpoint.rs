@@ -7,11 +7,12 @@ use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
   Executor, Model,
 };
-use tauri::{AppHandle, Manager, State};
-use tokio::sync::{Mutex, Semaphore};
+use tauri::{async_runtime::Mutex, AppHandle, Manager, State};
+use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 use tokio_js_set_interval::{clear_interval, set_interval_async};
 
+use crate::app_handle::get_app_handle;
 use crate::{
   db::{
     db_query_endpoints, endpoint::Endpoint, get_settings, notify_change, select,
@@ -26,7 +27,8 @@ use super::query_stats::query_all_stats;
 #[derive(Default)]
 pub struct XrayState {
   pub xray: Arc<Mutex<Option<Xray>>>,
-  pub interval: Arc<Mutex<u64>>,
+  pub stats_timer_id: Arc<Mutex<u64>>,
+  pub check_timer_id: Arc<Mutex<u64>>,
 }
 
 /// 测试全部节点的连接速度
@@ -57,7 +59,7 @@ async fn test_latencies(app: AppHandle) -> Result<()> {
 
     tests.spawn(async move {
       let _permit = permit;
-      test_endpoint(&app, xray, &settings).await.unwrap();
+      let _ = test_endpoint(&app, xray, &settings).await;
     });
   }
 
@@ -107,7 +109,7 @@ pub async fn set_current_endpoint(app: AppHandle, ep_id: i64) -> Result<()> {
 }
 
 async fn start_query_stats(state: &State<'_, XrayState>, api_port: u16) {
-  let mut guard = state.interval.lock().await;
+  let mut guard = state.stats_timer_id.lock().await;
 
   if *guard != 0 {
     clear_interval(*guard);
@@ -144,17 +146,11 @@ pub async fn select_fastest_endpoint(app: AppHandle) -> Result<i64> {
   Ok(ep.id)
 }
 
-async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> Result<()> {
+async fn test_endpoint(app: &AppHandle, xray: Xray, settings: &Settings) -> Result<()> {
   let ep = xray.endpoint().clone();
   info!("Testing endpoint {} - {}", ep.id, &ep.name);
-  xray.start("test").await?;
-  xray.wait_for_started().await?;
 
-  let latency = test_port(xray.port().unwrap(), &settings.ep_test_url)
-    .await
-    .unwrap_or(999999);
-  xray.stop().await?;
-
+  let latency = test_xray(xray, settings).await.unwrap_or(999999);
   debug!("Endpoint {} latency {}", ep.id, latency);
 
   let state: State<DbState> = app.state();
@@ -168,6 +164,18 @@ async fn test_endpoint(app: &AppHandle, mut xray: Xray, settings: &Settings) -> 
   notify_change::<Endpoint>(app)?;
 
   Ok(())
+}
+
+async fn test_xray(mut xray: Xray, settings: &Settings) -> Result<i32> {
+  xray.start("test").await?;
+  xray.wait_for_started().await?;
+
+  let latency = test_port(xray.port().unwrap(), &settings.ep_test_url)
+    .await
+    .unwrap_or(999999);
+  xray.stop().await?;
+
+  Ok(latency)
 }
 
 async fn test_port(proxy_port: u16, url: &String) -> Result<i32> {
@@ -188,4 +196,65 @@ async fn test_port(proxy_port: u16, url: &String) -> Result<i32> {
     // 999999 表示超时或失败
     Ok(999999)
   }
+}
+
+/// 启动自动检查当前节点
+pub async fn start_check_current_endpoint() -> Result<()> {
+  let app = get_app_handle().expect("No app handle");
+  let state: State<XrayState> = app.state();
+  let mut guard = state.check_timer_id.lock().await;
+
+  if *guard != 0 {
+    clear_interval(*guard);
+  }
+
+  let settings = get_settings(&app).await?;
+  let interval = settings.ep_test_interval as u64 * 60 * 1000;
+
+  info!(
+    "Starting check current endpoint every {} minutes",
+    settings.ep_test_interval
+  );
+
+  *guard = set_interval_async!(
+    || tokio::task::spawn(async {
+      check_current_endpoint().await.unwrap();
+    }),
+    interval
+  );
+
+  Ok(())
+}
+
+async fn check_current_endpoint() -> Result<()> {
+  let app = get_app_handle().expect("No app handle");
+  let started = {
+    let state: State<XrayState> = app.state();
+    let xray = state.xray.lock().await;
+
+    if let Some(xray) = xray.as_ref() {
+      if xray.port().unwrap_or_default() > 0 {
+        true
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  };
+  debug!("Checking current endpoint {}", started);
+
+  if started {
+    let settings = get_settings(&app).await?;
+    let latency = test_port(settings.socks_port, &settings.ep_test_url)
+      .await
+      .unwrap_or(999999);
+    info!("Current latency {}", latency);
+
+    if latency >= 999999 {
+      select_fastest_endpoint(app).await?;
+    }
+  }
+
+  Ok(())
 }

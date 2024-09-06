@@ -1,13 +1,18 @@
 use std::{collections::HashMap, str::FromStr};
 
-use base64::prelude::{Engine, BASE64_STANDARD};
+use base64::prelude::Engine;
 use log::debug;
 use ormlite::Model;
 use serde::{Deserialize, Serialize};
+use serde_aux::prelude::deserialize_number_from_string;
 use serde_json::{json, Value};
 use specta::Type;
 use thiserror::Error;
 use url::Url;
+
+use crate::db::base64::BASE64_STANDARD_MAY_PAD;
+
+use super::base64::try_base64_decode;
 
 /// 节点
 #[derive(Clone, Debug, Deserialize, Serialize, Type, Model)]
@@ -34,18 +39,18 @@ pub struct Endpoint {
 
 #[derive(Debug, Error)]
 pub enum ParseEndpointError {
-  #[error("invalid URI")]
+  #[error(transparent)]
   InvalidUri(#[from] url::ParseError),
-  #[error("failed to decode base64")]
+  #[error(transparent)]
   Base64DecodeError(#[from] base64::DecodeError),
-  #[error("failed to parse JSON")]
+  #[error(transparent)]
   JsonError(#[from] serde_json::Error),
-  #[error("failed to parse integer")]
+  #[error(transparent)]
   ParseIntError(#[from] std::num::ParseIntError),
+  #[error(transparent)]
+  FromUtf8Error(#[from] std::string::FromUtf8Error),
   #[error("unsupported protocol")]
   UnsupportedProtocol,
-  #[error("utf8 error")]
-  FromUtf8Error(#[from] std::string::FromUtf8Error),
 }
 
 /// VMess 协议参数
@@ -54,6 +59,7 @@ struct VMessParams {
   //v: String,
   ps: String,
   add: String,
+  #[serde(deserialize_with = "deserialize_number_from_string")]
   port: u16,
   //#[serde(rename = "type")]
   //type_: String,
@@ -107,7 +113,7 @@ impl Endpoint {
   fn from_vmess(uri: &str) -> Result<Self, ParseEndpointError> {
     let full = String::from(uri);
     let uri = &uri[8..];
-    let params = BASE64_STANDARD.decode(uri)?;
+    let params = BASE64_STANDARD_MAY_PAD.decode(uri)?;
     debug!(
       "Decoded vmess: {}",
       String::from_utf8(params.clone()).unwrap()
@@ -203,26 +209,43 @@ impl Endpoint {
   /// 从 ss URI 构建节点结构
   fn from_ss(s: &str, uri: &Url) -> Result<Self, ParseEndpointError> {
     let mut ep = Self::from_others(s, uri)?;
-    let userinfo = to_userinfo(uri);
-    let userinfo = if userinfo.contains(":") {
-      userinfo
+    let uri = if uri.username().is_empty() {
+      let mut decoded = try_base64_decode(String::from(uri.host_str().unwrap()))?;
+      decoded.insert_str(0, "ss://");
+      let uri = Url::parse(&decoded)?;
+      uri
     } else {
-      let v8 = BASE64_STANDARD.decode(userinfo)?;
-      String::from_utf8(v8)?
+      let username: String = urlencoding::decode(uri.username())?.into();
+      let decoded = try_base64_decode(username.clone())?;
+
+      if username == decoded {
+        uri.clone()
+      } else {
+        let mut uri = uri.clone();
+
+        if let Some((username, password)) = decoded.split_once(':') {
+          uri.set_username(username).unwrap();
+          uri.set_password(Some(password)).unwrap();
+        } else {
+          uri.set_username(&decoded).unwrap();
+        }
+
+        uri
+      }
     };
-    let pos = userinfo.find(":").unwrap_or_default();
-    let method = &userinfo[0..pos];
-    let password = &userinfo[pos + 1..];
+
+    ep.host = String::from(uri.host_str().unwrap());
+    ep.port = uri.port().unwrap_or_default();
 
     let outbound = json!({
       "tag": "proxy",
       "protocol": "shadowsocks",
       "settings": {
         "servers": [{
-          "method": method,
-          "address": ep.host,
+          "method": uri.username(),
+          "address": &ep.host,
           "port": ep.port,
-          "password": password,
+          "password": uri.password().unwrap(),
         }]
       },
     });
@@ -237,6 +260,7 @@ impl FromStr for Endpoint {
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let uri = Url::parse(s)?;
+    debug!("URL: {:?}", &uri);
 
     match uri.scheme() {
       "vmess" => Self::from_vmess(s),

@@ -10,6 +10,14 @@ import RulePage from './pages/RulePage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import './styles.css';
 
+if (!import.meta.env.DEV) {
+  document.addEventListener('contextmenu', (event) => {
+    if (!event.target || !('tagName' in event.target) || event.target.tagName !== 'INPUT') {
+      event.preventDefault();
+    }
+  });
+}
+
 const router = createBrowserRouter([
   {
     path: '/',

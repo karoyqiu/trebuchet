@@ -1,6 +1,6 @@
 [package]
 name = "trebuchet"
-version = "1.3.0"
+version = "1.4.0"
 description = "Project Trebuchet"
 authors = ["karoyqiu@gmail.com"]
 license = "MIT"
@@ -20,11 +20,12 @@ ormlite = { version = "0.18.0", features = ["sqlite"] }
 reqwest = { version = "0.11.18", features = ["deflate", "brotli", "gzip", "socks"] }
 scopeguard = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }
+serde-aux = { version = "4.5.0", default-features = false }
 serde_json = "1.0"
 specta = "1.0.5"
 tauri = { version = "1.7", features = ["cli", "fs-remove-file", "fs-write-file", "os-all", "path-all", "shell-sidecar", "system-tray", "window-show"] }
 tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
-tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1", features = ["colored"] }
 tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-specta = { version = "1.0.2", features = ["typescript"] }
 thiserror = "1.0.47"

@@ -24,8 +24,9 @@ const useStats = () => {
   const s = stats.use();
 
   const handleStats = useCallback((event: Event<AllStats>) => {
-    const deltaDownload = Math.max(0, event.payload.totalDownload - s.totalDownload);
-    const deltaUpload = Math.max(0, event.payload.totalUpload - s.totalUpload);
+    const old = stats.get();
+    const deltaDownload = Math.max(0, event.payload.totalDownload - old.totalDownload);
+    const deltaUpload = Math.max(0, event.payload.totalUpload - old.totalUpload);
 
     stats.set({
       ...event.payload,

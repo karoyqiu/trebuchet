@@ -10,6 +10,7 @@ use ormlite::{
   model::{HasModelBuilder, ModelBuilder},
   Model,
 };
+use reqwest::Response;
 use scopeguard::defer;
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -21,7 +22,7 @@ use crate::{
   error::{Error, Result},
 };
 
-use super::{endpoint::Endpoint, DbState};
+use super::{endpoint::Endpoint, get_settings, DbState};
 
 static UPDATING_ONES: LazyLock<RwLock<HashSet<i64>>> =
   LazyLock::new(|| RwLock::new(HashSet::new()));
@@ -58,12 +59,16 @@ impl Subscription {
       }
 
       // 下载订阅
-      let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(60))
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0")
-        .build()?;
-      let body = client.get(&self.url).send().await?;
-      let body = body.text().await?;
+      let resp = {
+        let resp = self.get_response(&app, false).await;
+
+        match resp {
+          Ok(resp) => resp,
+          Err(_) => self.get_response(&app, true).await?,
+        }
+      };
+
+      let body = resp.text().await?;
       debug!("String: {}", &body);
 
       // 尝试 base64 解码
@@ -121,6 +126,26 @@ impl Subscription {
     } else {
       Err(Error::Anyhow(anyhow!("No app handle")))
     }
+  }
+
+  /// 下载订阅
+  async fn get_response(&self, app: &AppHandle, proxy: bool) -> Result<Response> {
+    // 下载订阅
+    let mut builder = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0");
+
+    if proxy {
+      let settings = get_settings(app).await?;
+      builder = builder.proxy(reqwest::Proxy::all(&format!(
+        "http://127.0.0.1:{}",
+        settings.http_port
+      ))?);
+    }
+
+    let client = builder.build()?;
+    let resp = client.get(&self.url).send().await?;
+    Ok(resp)
   }
 
   /// 检查是否正在更新

@@ -155,6 +155,10 @@ export function dbGetUpdatingSubscriptionIds() {
  */
 export type Endpoint = { id: number; subId: number; uri: string; name: string; host: string; port: number; latency: number | null; outbound: string }
 /**
+ * 订阅分组
+ */
+export type Subscription = { id: number; name: string; url: string; disabled: boolean | null }
+/**
  * 设置
  */
 export type Settings = { socksPort: number; httpPort: number; allowLan: boolean; subUpdateInterval: number; epTestInterval: number; epTestConcurrency: number; epTestUrl: string; rule: string }
@@ -166,10 +170,6 @@ export type Website = { id: number; name: string; url: string }
  * Xray 日志
  */
 export type Log = { id: number; log: string }
-/**
- * 订阅分组
- */
-export type Subscription = { id: number; name: string; url: string; disabled: boolean | null }
 /**
  * 流量记录
  */
